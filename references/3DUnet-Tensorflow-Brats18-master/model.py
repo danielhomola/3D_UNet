@@ -3,10 +3,6 @@
 ###
 
 import tensorflow as tf
-from tensorpack.tfutils.scope_utils import auto_reuse_variable_scope
-from tensorpack.tfutils.summary import add_moving_summary
-from tensorpack.tfutils.argscope import argscope
-from tensorpack.tfutils.scope_utils import under_name_scope
 
 from tensorpack.models import (
     BatchNorm, layer_register
@@ -14,7 +10,7 @@ from tensorpack.models import (
 from custom_ops import BatchNorm3d, InstanceNorm5d
 import numpy as np
 import config
-import tensorflow.contrib.slim as slim
+
 PADDING = "SAME"
 DATA_FORMAT="channels_first"
 BASE_FILTER = 16
