@@ -6,6 +6,7 @@ segmentation file for all patients in a dataset.
 import re
 import pickle
 
+import skimage
 import pydicom
 import nrrd
 import numpy as np
@@ -39,7 +40,7 @@ class Dataset(object):
 
 
         Returns:
-            dict: a dict of :class:`src.data.data_utils.Patient` objects.
+            dict: a dict of :class:`src.data_utils.Patient` objects.
         """
 
         patients = dict()
@@ -66,10 +67,35 @@ class Dataset(object):
                 patients[scan.PatientID].add_scan(scan=scan)
         
         # sort scans within each patient
-        for patient in patients.keys():
-            patients[patient].order_scans()
+        for patient in patients.values():
+            patient.order_scans()
         
         return patients
+
+    def preprocess_dataset(self, width=128, height=128, depths=(24, 32)):
+        """
+        Scales each scan in the dataset to be between zero and one, then
+        resizes all scans and targets to have the same width and height.
+
+        It also turns the target into a one-hot encoded tensor of shape:
+        [depth, width, height, num_classes].
+
+        Finally, it ensures that all patients have the same number of depth(s),
+        i.e. their tensors have the same  dimensions. Defaults: 24 and 32.
+        This is to ensure that a 3D U-Net with depth 4 can be built, i.e. the
+        downsampled layer of the maxpooling and the upsampled layer of the
+        transponsed convolution are guaranteed to have the same depth.
+
+        Args:
+            width (int): Width to resize all scans and targets in dataset.
+            height (int): Height to resize all scans and targets in dataset.
+            depths (tuple <int>): Tuple of acceptable depths.
+        """
+        for patient in self.patients.values():
+            patient.normalise_scans()
+            patient.resize_and_reshape(width=width, height=height)
+            patient.adjust_depth(depths=depths)
+            patient.preprocessed = True
 
     def save_dataset(self, path):
         """
@@ -89,7 +115,7 @@ class Dataset(object):
             path (str): Full path to the pickled dataset.
 
         Returns:
-            dict: a dict of :class:`src.data.data_utils.Patient` objects.
+            dict: a dict of :class:`src.data_utils.Patient` objects.
         """
         return pickle.load(open(path, 'rb'))
 
@@ -107,11 +133,13 @@ class Patient(object):
             seg (str): Path to the segmentation file.
         """
         self.scans = list()
-        self.seg = seg
+        # make depth the first dim as with the scans
+        self.seg = np.moveaxis(seg, -1, 0)
         self._instance_nums = list()
         self.thicknesses = set()
         self.manufacturers = set()
         self.add_scan(scan)
+        self.preprocessed = False
         
     def add_scan(self, scan):
         """
@@ -122,7 +150,6 @@ class Patient(object):
         Args:
             scan (:class:`pydicom.dataset.FileDataset'): A loaded MRI scan.
         """
-
         self.scans.append(scan.pixel_array)
         self._instance_nums.append(int(scan.InstanceNumber))
         self.thicknesses.add(int(scan.SliceThickness))
@@ -135,7 +162,95 @@ class Patient(object):
         order = np.argsort(self._instance_nums)
         self.scans = np.array(self.scans)
         self.scans = self.scans[order, :, :]
-        
+
+    def normalise_scans(self):
+        """
+        Scales each scan in the dataset to be between zero and one.
+        """
+        scans = self.scans.astype(np.float32)
+
+        for i, scan in enumerate(scans):
+            scan_min = np.min(scan)
+            scan_max = np.max(scan)
+
+            # avoid dividing by zero
+            if scan_max != scan_min:
+                scans[i] = (scan - scan_min) / (scan_max - scan_min)
+            else:
+                scans[i] = scan * 0
+        self.scans = scans
+
+    def resize_and_reshape(self, width, height):
+        """
+        Resizes each scan and target segmentation image of a patient to a
+        given width and height. It also turns the target into a one-hot
+        encoded tensor of shape: [depth, width, height, num_classes].
+
+        Args:
+            width (int): Width to resize all scans and targets in dataset.
+            height (int): Height to resize all scans and targets in dataset.
+        """
+        # resize scans
+        depth = self.scans.shape[0]
+        scans = skimage.transform.resize(
+            image=self.scans,
+            output_shape=(depth, width, height)
+        )
+        self.scans = scans
+
+        # turns target into one-hot tensor, adopted from:
+        # https://stackoverflow.com/a/36960495
+        n_classes = self.seg.max() + 1
+        seg = (np.arange(n_classes) == self.seg[..., None]).astype(bool)
+
+        # resize targets while preserving their boolean nature
+        seg = skimage.img_as_bool(
+            skimage.transform.resize(
+                image=seg,
+                output_shape=(depth, width, height, n_classes)
+            )
+        )
+        self.seg = seg.astype(int)
+
+    def adjust_depth(self, depths):
+        """
+        There's a wide range of scan numbers across the patients. We need to
+        unify these so they can be fed into the network.
+
+        This is to ensure that a 3D U-Net with depth 4 can be built, i.e. the
+        downsampled layer of the maxpooling and the upsampled layer of the
+        transponsed convolution are guaranteed to have the same depth.
+
+        Note this function can only be run once the target tensor has been
+        converted to a one hot encoded version with `resize_and_reshape`.
+
+        Args:
+            depths (tuple <int>): Tuple of acceptable depths.
+        """
+        depth, width, height = self.scans.shape
+
+        # find which acceptable depth we should use
+        depths = np.array(depths)
+        new_depth = depths[np.argmin(np.abs(depths - depth))]
+        depth_delta = np.abs(new_depth - depth)
+
+        # we need to adjust the depth
+        if depth_delta != 0:
+            # pad scans and seg with repeating last scan
+            if new_depth > depth:
+                # to_add = np.zeros((depth_delta, width, height))
+                to_add = np.repeat(self.scans[-1:, :, :], depth_delta, axis=0)
+                self.scans = np.concatenate((self.scans, to_add), axis=0)
+
+                # num_classes = self.seg.shape[-1]
+                # to_add = np.zeros((depth_delta, width, height, num_classes))
+                to_add = np.repeat(self.seg[-1:, :, :, :], depth_delta, axis=0)
+                self.seg = np.concatenate((self.seg, to_add), axis=0)
+            # delete last few scans and segs
+            else:
+                self.scans = self.scans[:new_depth, :, :]
+                self.seg = self.seg[:new_depth, :, :, :]
+
     def anim_scans(self):
         """
         Generates an animation for IPython, visualising all the scans of a
@@ -175,10 +290,19 @@ class Patient(object):
         Helper function, that concatenates the MRI image with its corresponding
         segmentation image file and rescales the latter so their colours are
         comparable.
+
+        If we have preprocessed data, i.e. the target is a one hot encoded
+        tensor, we use the 2nd class for visualisation.
+
         Args:
             i (int): Index of scan in the patient's list of scans.
 
         """
         scan = self.scans[i]
-        seg = self.seg[:, :, i] * (scan.max()/2)
+        # if we have preprocessed data use class 2 from target/segmentation
+        if self.preprocessed:
+            seg = self.seg[i, :, :, 1] * scan.max()
+        else:
+            seg = self.seg[i] * (scan.max() / 2)
         return np.hstack([scan, seg])
+
