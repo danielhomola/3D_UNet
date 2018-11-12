@@ -10,6 +10,7 @@ import skimage
 import pydicom
 import nrrd
 import numpy as np
+import tensorflow as tf
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 
@@ -119,7 +120,52 @@ class Dataset(object):
         """
         return pickle.load(open(path, 'rb'))
 
-        
+    def create_tf_dataset(self):
+        """
+        Creates a TensorFlow DataSet from the DataSet. Note, this has to be
+        run after all the MRI scans have been rescaled to the same size. They
+        can have different depths, i.e. number of scans however.
+
+        Returns:
+            :class:`tf.data.Dataset`: TensorFlow dataset.
+        """
+
+        # extract all scans and segmentation images from every patient
+        x_all = [p.scans for p in self.patients.values()]
+        y_all = [p.seg for p in self.patients.values()]
+
+        # extract depths, width and height, num_classes from the dataset
+        depths = list(set([x.shape[0] for x in x_all]))
+        _, width, height = x_all[0].shape
+        num_classes = y_all[0].shape[-1]
+
+        datasets = []
+        # for depth in depths:
+        for depth in [32]:
+            # select patients with the right number of scans
+            x_depth = [x for x in x_all if x.shape[0] == depth]
+            y_depth = [y for y in y_all if y.shape[0] == depth]
+            # reshape dataset from list of 3d volumes into 5d volume
+            x_depth = np.concatenate(x_depth).reshape(
+                (-1, depth, width, height, 1)
+            )
+            y_depth = np.concatenate(y_depth).reshape(
+                (-1, depth, width, height, num_classes)
+            )
+            datasets.append(
+                tf.data.Dataset.from_tensor_slices((x_depth, y_depth))
+            )
+
+        # concatenate all tf datasets into a single one
+        if len(datasets) == 1:
+            merged_dataset = datasets[0]
+        else:
+            merged_dataset = datasets.pop(0)
+            for dataset in datasets:
+                merged_dataset = merged_dataset.concatenate(dataset)
+        return merged_dataset
+
+
 class Patient(object):
     """
     Basic object to store all slices of a patient in the study.
@@ -238,12 +284,9 @@ class Patient(object):
         if depth_delta != 0:
             # pad scans and seg with repeating last scan
             if new_depth > depth:
-                # to_add = np.zeros((depth_delta, width, height))
                 to_add = np.repeat(self.scans[-1:, :, :], depth_delta, axis=0)
                 self.scans = np.concatenate((self.scans, to_add), axis=0)
 
-                # num_classes = self.seg.shape[-1]
-                # to_add = np.zeros((depth_delta, width, height, num_classes))
                 to_add = np.repeat(self.seg[-1:, :, :, :], depth_delta, axis=0)
                 self.seg = np.concatenate((self.seg, to_add), axis=0)
             # delete last few scans and segs
