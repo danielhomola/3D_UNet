@@ -1,4 +1,6 @@
+import logging
 import tensorflow as tf
+log = logging.getLogger('tensorflow')
 
 
 def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
@@ -40,7 +42,8 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             filters=n_filters,
             training=training
         )
-        print('conv1:', layer1.shape)
+        log.debug('conv1: %s' % layer1.shape)
+
         layer2 = conv3d_bn_relu(
             inputs=layer1,
             part='analysis2',
@@ -48,8 +51,8 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             filters=n_filters * 2,
             training=training
         )
-        print('conv2:', layer2.shape)
         concat_layer_sizes.append(n_filters * 2)
+        log.debug('conv2: %s' % layer2.shape)
 
         # add max pooling unless we're at the end of the bottle-neck
         if layer_depth < depth - 1:
@@ -60,7 +63,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
                 padding='valid',
                 name=create_name('analysis', 'maxpool', layer_depth)
             )
-            print('maxpool layer:', current_layer.shape)
+            log.debug('maxpool layer: %s' % current_layer.shape)
             levels.append([layer1, layer2, current_layer])
         else:
             current_layer = layer2
@@ -83,8 +86,8 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             use_bias=False,
             name=create_name('synthesis', 'upconv', layer_depth)
         )
-        print('upconv layer:', up_conv.shape)
-        print('concat layer:', levels[layer_depth][1].shape)
+        log.debug('upconv layer: %s' % up_conv.shape)
+        log.debug('concat layer: %s' % levels[layer_depth][1].shape)
         # concat with appropriate layer of analysis path
         concat = tf.concat(
             [up_conv, levels[layer_depth][1]],
@@ -100,7 +103,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             filters=concat_layer_sizes[layer_depth],
             training=training
         )
-        print('up_conv layer1:', current_layer.shape)
+        log.debug('up_conv layer1: %s' % current_layer.shape)
         current_layer = conv3d_bn_relu(
             inputs=current_layer,
             part='synthesis2',
@@ -108,7 +111,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             filters=concat_layer_sizes[layer_depth],
             training=training
         )
-        print('up_conv layer2:', current_layer.shape)
+        log.debug('up_conv layer2 : %s' % current_layer.shape)
 
     # add final conv layer
     output_layer = tf.layers.conv3d(
@@ -119,7 +122,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         use_bias=True,
         name=create_name('synthesis', 'final_conv3d', 0)
     )
-    print('output layer:', output_layer.shape)
+    log.debug('output layer:: %s' % output_layer.shape)
     return output_layer
 
 
@@ -150,11 +153,14 @@ def conv3d_bn_relu(inputs, filters, part, layer_depth,
         kernel_size=kernel,
         strides=strides,
         padding=padding,
+        use_bias=False,
         name=create_name(part, 'conv3d', layer_depth)
     )
     layer = tf.layers.batch_normalization(
         inputs=layer,
         training=training,
+        axis=-1,
+        fused=True,
         name=create_name(part, 'batch_norm', layer_depth)
     )
     layer = tf.nn.relu(

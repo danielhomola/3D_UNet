@@ -5,6 +5,7 @@ segmentation file for all patients in a dataset.
 
 import re
 import pickle
+import logging
 
 import skimage
 import pydicom
@@ -14,6 +15,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 
+log = logging.getLogger('tensorflow')
 
 class Dataset(object):
     """
@@ -55,6 +57,7 @@ class Dataset(object):
         
         # build dict of patient objects
         for i, scan in enumerate(scans):
+            log.info('Reading in and parsing scan %d/%d' % (i, len(scans)))
             if scan.PatientID not in patients:
                 # unfortunately, the PatientID cannot be trusted as sometimes 
                 # it doesn't correspond to the appropriate nddr file, so we use 
@@ -92,7 +95,9 @@ class Dataset(object):
             height (int): Height to resize all scans and targets in dataset.
             depths (tuple <int>): Tuple of acceptable depths.
         """
-        for patient in self.patients.values():
+        for i, patient in enumerate(self.patients.values()):
+            log.info('Preprocessing data of patient %d/%d' % (
+                i, len(self.patients.values())))
             patient.normalise_scans()
             patient.resize_and_reshape(width=width, height=height)
             patient.adjust_depth(depths=depths)
