@@ -79,6 +79,8 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             kernel_size=(2, 2, 2),
             strides=(2, 2, 2),
             padding='same',
+            # see https://github.com/tensorflow/tensorflow/issues/10520
+            use_bias=False,
             name=create_name('synthesis', 'upconv', layer_depth)
         )
         print('upconv layer:', up_conv.shape)

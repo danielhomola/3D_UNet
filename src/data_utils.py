@@ -140,8 +140,7 @@ class Dataset(object):
         num_classes = y_all[0].shape[-1]
 
         datasets = []
-        # for depth in depths:
-        for depth in [32]:
+        for depth in depths:
             # select patients with the right number of scans
             x_depth = [x for x in x_all if x.shape[0] == depth]
             y_depth = [y for y in y_all if y.shape[0] == depth]
