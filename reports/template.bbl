@@ -1,0 +1,124 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.6 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist[entry]{nty/global}
+    \entry{hadash2018estimate}{article}{}
+      \name{author}{6}{}{%
+        {{hash=052e6bd4c478b36dd81cad4f79b14b7d}{%
+           family={Hadash},
+           family_i={H\bibinitperiod},
+           given={Guy},
+           given_i={G\bibinitperiod}}}%
+        {{hash=c7e0836762952ec63b452768b4823649}{%
+           family={Kermany},
+           family_i={K\bibinitperiod},
+           given={Einat},
+           given_i={E\bibinitperiod}}}%
+        {{hash=849f9bd8602f19c7ea3173d5b99d9604}{%
+           family={Carmeli},
+           family_i={C\bibinitperiod},
+           given={Boaz},
+           given_i={B\bibinitperiod}}}%
+        {{hash=f7d95641b3cd09d72892eb2bf5df4191}{%
+           family={Lavi},
+           family_i={L\bibinitperiod},
+           given={Ofer},
+           given_i={O\bibinitperiod}}}%
+        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
+           family={Kour},
+           family_i={K\bibinitperiod},
+           given={George},
+           given_i={G\bibinitperiod}}}%
+        {{hash=a974d87b05eb5eae26333687ecf455ba}{%
+           family={Jacovi},
+           family_i={J\bibinitperiod},
+           given={Alon},
+           given_i={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{53599bedbcafe7b6228cf7437bba8da6}
+      \strng{fullhash}{3ba212951a1ba0ce164e8749f631f9d6}
+      \field{sortinit}{H}
+      \field{sortinithash}{82012198d5dfa657b8c4a168793268a6}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:1804.09028}
+      \field{title}{Estimate and Replace: A Novel Approach to Integrating Deep Neural Networks with Existing Applications}
+      \field{year}{2018}
+    \endentry
+    \entry{kour2014fast}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
+           family={Kour},
+           family_i={K\bibinitperiod},
+           given={George},
+           given_i={G\bibinitperiod}}}%
+        {{hash=31a608379ab90bbbd8d521eb77b31c28}{%
+           family={Saabne},
+           family_i={S\bibinitperiod},
+           given={Raid},
+           given_i={R\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{5fef397f01a7bcf6d177446751781493}
+      \strng{fullhash}{5fef397f01a7bcf6d177446751781493}
+      \field{sortinit}{K}
+      \field{sortinithash}{a7d5b3aec5a0890aae7baf85a209abfc}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Soft Computing and Pattern Recognition (SoCPaR), 2014 6th International Conference of}
+      \field{title}{Fast classification of handwritten on-line Arabic characters}
+      \field{year}{2014}
+      \field{pages}{312\bibrangedash 318}
+      \range{pages}{7}
+    \endentry
+    \entry{kour2014real}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
+           family={Kour},
+           family_i={K\bibinitperiod},
+           given={George},
+           given_i={G\bibinitperiod}}}%
+        {{hash=31a608379ab90bbbd8d521eb77b31c28}{%
+           family={Saabne},
+           family_i={S\bibinitperiod},
+           given={Raid},
+           given_i={R\bibinitperiod}}}%
+      }
+      \list{organization}{1}{%
+        {IEEE}%
+      }
+      \strng{namehash}{5fef397f01a7bcf6d177446751781493}
+      \strng{fullhash}{5fef397f01a7bcf6d177446751781493}
+      \field{sortinit}{K}
+      \field{sortinithash}{a7d5b3aec5a0890aae7baf85a209abfc}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Frontiers in Handwriting Recognition (ICFHR), 2014 14th International Conference on}
+      \field{title}{Real-time segmentation of on-line handwritten arabic script}
+      \field{year}{2014}
+      \field{pages}{417\bibrangedash 422}
+      \range{pages}{6}
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+

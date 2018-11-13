@@ -132,9 +132,9 @@ class Dataset(object):
 
     def create_tf_dataset(self, num_classes=3):
         """
-        Creates a TensorFlow DataSet from the DataSet. Note, this has to be
-        run after all the MRI scans have been rescaled to the same size. They
-        can have different depths, i.e. number of scans however.
+        Creates a TensorFlow DataSet from the DataSet. Note, this has to
+        be run after all the MRI scans have been rescaled to the same size.
+        They can have different depths, i.e. number of scans however.
 
         Returns:
             :class:`tf.data.Dataset`: TensorFlow dataset.

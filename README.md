@@ -1,8 +1,14 @@
-# 3D U-Net in TensorFlow for DeepMind
+# 3D U-Net in TensorFlow
+
+*Author: Daniel Homola*
+
+__Main deliverables:__
+
+- [Project summary](reports/report.pdf)
+- [Data exploration notebook](notebooks/data_exploration.ipynb)
+- [Model exploration notebook](notebooks/model_exploration.ipynb)
 
 <img src="reports/figures/output.gif" width=1024 />
-
-Prostate diagnosis using 3D U-Net in TensorFlow.
 
 MRI scans from 70 patients were used to learn to automatically segment
 the 3D volume of scans, and therefore spatially identify the outlines of
@@ -20,10 +26,12 @@ Original Paper
 
 ## Summary
 
-Vehicle Detection using U-Net
+__Prostate MRI segmentation using 3D U-Net in TensorFlow.__
 
-Objective: detect vehicles
-Find a function f such that y = f(X)
+Objective: assign mutually exclusive class labels to each pixel/voxel.
+
+Class labels: 0: background, 1: central gland , 2: peripheral zone
+
 <table>
     <tr>
         <th>Input</th>

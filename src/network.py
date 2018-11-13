@@ -4,7 +4,9 @@ Original paper: https://arxiv.org/abs/1606.06650
 """
 
 import logging
+
 import tensorflow as tf
+
 log = logging.getLogger('tensorflow')
 
 
@@ -13,7 +15,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
     Simple implementation of 3D U-Net building function.
     Original paper: https://arxiv.org/abs/1606.06650
 
-    Inspiration was taken from several repos:
+    Inspiration was taken from the following repos:
     TF implementation: https://github.com/zhengyang-wang/3D-Unet--Tensorflow
     Keras implementation: https://github.com/ellisdg/3DUnetCNN
 
@@ -23,8 +25,8 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         depth (int): Depth of the architecture.
         n_base_filters (int): Number of conv3d filters in the first layer.
         training (bool): Whether we are training or not, important for the
-            batch normalisation layer. At inference time we need the population
-            mean and variance instead of the batch one.
+            batch normalisation layer. At inference time we need the
+            population mean and variance instead of the batch one.
 
     Returns:
         :class:`tf.Tensor`: 3D U-Net network.
@@ -34,11 +36,11 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
     concat_layer_sizes = list()
 
     # -------------------------------------------------------------------------
-    # ANALYSIS PATH
+    # analysis path
     # -------------------------------------------------------------------------
 
     for layer_depth in range(depth):
-        # two conv > batch norm > relu blocks
+        # two conv3d > batch norm > relu blocks
         n_filters = n_base_filters * (2 ** layer_depth)
         layer1 = conv3d_bn_relu(
             inputs=current_layer,
@@ -59,7 +61,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         concat_layer_sizes.append(n_filters * 2)
         log.debug('conv2: %s' % layer2.shape)
 
-        # add max pooling unless we're at the end of the bottle-neck
+        # add max pooling unless we're at the end of the bottleneck
         if layer_depth < depth - 1:
             current_layer = tf.layers.max_pooling3d(
                 inputs=layer2,
@@ -75,7 +77,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             levels.append([layer1, layer2])
 
     # -------------------------------------------------------------------------
-    # SYNTHESIS PATH
+    # synthesis path
     # -------------------------------------------------------------------------
 
     for layer_depth in range(depth - 2, -1, -1):
@@ -100,7 +102,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             name=create_name('synthesis', 'concat', layer_depth)
         )
 
-        # two conv > batch norm > relu blocks
+        # two conv3d > batch norm > relu blocks
         current_layer = conv3d_bn_relu(
             inputs=concat,
             part='synthesis',
@@ -118,7 +120,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         )
         log.debug('up_conv layer2 : %s' % current_layer.shape)
 
-    # add final conv layer
+    # final conv3d layer
     output_layer = tf.layers.conv3d(
         inputs=current_layer,
         filters=num_classes,
@@ -135,7 +137,7 @@ def conv3d_bn_relu(inputs, filters, part, layer_depth,
                    kernel=(3, 3, 3), strides=(1, 1, 1),
                    padding='same', training=True):
     """
-    Basic conv3d > batch normalisation > relu building block for the network.
+    Basic conv3d > Batch Normalisation > Relu building block for the network.
 
     Args:
         inputs (:class:`tf.Tensor`): 5D tensor input to the block.
@@ -146,8 +148,8 @@ def conv3d_bn_relu(inputs, filters, part, layer_depth,
         strides (tuple): See conv3D TF docs.
         padding (str): See conv3D TF docs.
         training (bool): Whether we are training or not, important for the
-            batch normalisation layer. At inference time we need the population
-            mean and variance instead of the batch one.
+            batch normalisation layer. At inference time we need the
+            population mean and variance instead of the batch one.
 
     Returns:
         :class:`tf.Tensor`: Relu(BatchNorm(Conv3D))
