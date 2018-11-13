@@ -1,3 +1,8 @@
+"""
+This module builds a 3D U-Net network.
+Original paper: https://arxiv.org/abs/1606.06650
+"""
+
 import logging
 import tensorflow as tf
 log = logging.getLogger('tensorflow')

@@ -1,57 +1,131 @@
-deepmind_unet
-==============================
+# 3D U-Net in TensorFlow for DeepMind
 
-This project implements the 3D U-Net paper using Tensorflow and trains it on prostate cancer data from the 2013 NCI-ISBI Challenge.
+<img src="reports/figures/output.gif" width=1024 />
 
-Project Organization
-------------
+Prostate diagnosis using 3D U-Net in TensorFlow.
 
-    ├── LICENSE
-    ├── Makefile           <- Makefile with commands like `make data` or `make train`
-    ├── README.md          <- The top-level README for developers using this project.
-    ├── data
-    │   ├── external       <- Data from third party sources.
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
-    │
-    ├── docs               <- A default Sphinx project; see sphinx-doc.org for details
-    │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
-    │
-    ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-    │                         the creator's initials, and a short `-` delimited description, e.g.
-    │                         `1.0-jqp-initial-data-exploration`.
-    │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
-    ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
-    │
-    ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-    │                         generated with `pip freeze > requirements.txt`
-    │
-    ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
-    ├── src                <- Source code for use in this project.
-    │   ├── __init__.py    <- Makes src a Python module
-    │   │
-    │   ├── data           <- Scripts to download or generate data
-    │   │   └── make_dataset.py
-    │   │
-    │   ├── features       <- Scripts to turn raw data into features for modeling
-    │   │   └── build_features.py
-    │   │
-    │   ├── models         <- Scripts to train models and then use trained models to make
-    │   │   │                 predictions
-    │   │   ├── predict_model.py
-    │   │   └── train_model.py
-    │   │
-    │   └── visualization  <- Scripts to create exploratory and results oriented visualizations
-    │       └── visualize.py
-    │
-    └── tox.ini            <- tox file with settings for running tox; see tox.testrun.org
+MRI scans from 70 patients were used to learn to automatically segment
+the 3D volume of scans, and therefore spatially identify the outlines of
+the central gland (CG) and peripheral zone (PZ).
+
+The aim of this project was to quickly establish a benchmark model,
+with minimal / lightweight code, only relying on core TensorFlow and
+Python, i.e. without using Keras or other wrapper libraries.
+
+Dataset used
+- [NCI-ISBI 2013 Challenge: Automated Segmentation of Prostate Structures](https://wiki.cancerimagingarchive.net/display/DOI/NCI-ISBI+2013+Challenge%3A+Automated+Segmentation+of+Prostate+Structures)
+
+Original Paper
+- [3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation](https://arxiv.org/abs/1606.06650)
+
+## Summary
+
+Vehicle Detection using U-Net
+
+Objective: detect vehicles
+Find a function f such that y = f(X)
+<table>
+    <tr>
+        <th>Input</th>
+        <th>Shape</th>
+        <th>Explanation</th>
+        <th>Example</th>
+    </tr>
+    <tr>
+        <td>X: 4-D Tensor</td>
+        <td>(?, 128, 128, 1)</td>
+        <td>Resized (128, 128) MRI scans with depth (between 15 and 40)
+        and a single channel.</td>
+        <td><img src="assets/example_input.jpg" width=320 /></td>
+    </tr>
+    <tr>
+        <td>y: 4-D Tensor</td>
+        <td>(?, 128, 128, 3)</td>
+        <td>Resized (128, 128) segmentation images with depth
+        corresponding to X and a three classes, i.e. 3 channels one-hot
+         encoded.</td>
+        <td><img src="assets/example_output.jpg" width=320 /></td>
+    </tr>
+</table>
+
+### Examples on Test Data
+<img src="reports/figures/result1.png" />
+<img src="reports/figures/result2.png" />
+<img src="reports/figures/result3.png" />
+<img src="reports/figures/result4.png" />
 
 
---------
+## Get Started
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+### Download dataset
+
+- The dataset was downloaded from [here](https://wiki.cancerimagingarchive.net/display/DOI/NCI-ISBI+2013+Challenge%3A+Automated+Segmentation+of+Prostate+Structures).
+- As per the instructions, the training (60) and leaderboard (10)
+subjects were pooled to form the train dataset (1816 scans in total).
+- The test dataset consists of 10 patients with 271 scans.
+
+
+### Setup project
+
+- Create new Python3 `virtualenv` (assumes you have `virtualenv` and
+`virtualenvwrapper` installed and set up)
+- Install dependencies.
+
+```bash
+mkvirtualenv --python=`which python3` unet3d
+workon unet3d
+make requirements
+```
+
+Additional helper functions can be explored with.
+
+```bash
+make help
+```
+
+
+### Explore and preprocess data
+
+- In this notebook, we load in the MRI scans and their segmentations,
+build a Dataset object for the train and test set.
+- Then we check some basic stats of the datasets and visualise a few
+scans.
+- Finally, we carry out our preprocessing steps and save the train and
+test datasets.
+
+
+```bash
+jupyter notebook "notebooks/data_exploration.ipynb"
+```
+
+### Train
+
+```bash
+# Train for 1 epoch
+python train.py
+```
+
+or
+
+```bash
+$ python train.py --help
+usage: train.py [-h] [--epochs EPOCHS] [--batch-size BATCH_SIZE]
+                [--logdir LOGDIR] [--reg REG] [--ckdir CKDIR]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --epochs EPOCHS       Number of epochs (default: 1)
+  --batch-size BATCH_SIZE
+                        Batch size (default: 4)
+  --logdir LOGDIR       Tensorboard log directory (default: logdir)
+  --reg REG             L2 Regularizer Term (default: 0.1)
+  --ckdir CKDIR         Checkpoint directory (default: models)
+```
+
+### Test
+
+- Open the Jupyter notebook file to run against test data
+
+```bash
+jupyter notebook "notebooks/model_exploration.ipynb"
+```

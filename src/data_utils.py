@@ -17,6 +17,7 @@ from IPython.display import display, clear_output
 
 log = logging.getLogger('tensorflow')
 
+
 class Dataset(object):
     """
     Object to collect all patients within the train/test set.
@@ -57,7 +58,6 @@ class Dataset(object):
         
         # build dict of patient objects
         for i, scan in enumerate(scans):
-            log.info('Reading in and parsing scan %d/%d' % (i, len(scans)))
             if scan.PatientID not in patients:
                 # unfortunately, the PatientID cannot be trusted as sometimes 
                 # it doesn't correspond to the appropriate nddr file, so we use 
@@ -69,6 +69,8 @@ class Dataset(object):
                 patients[scan.PatientID] = Patient(scan=scan, seg=seg_file)
             else:
                 patients[scan.PatientID].add_scan(scan=scan)
+
+            log.info('Reading in and parsing scan %d/%d' % (i, len(scans)))
         
         # sort scans within each patient
         for patient in patients.values():
@@ -76,7 +78,7 @@ class Dataset(object):
         
         return patients
 
-    def preprocess_dataset(self, width=128, height=128, depths=(24, 32)):
+    def preprocess_dataset(self, width=128, height=128, max_scans=32):
         """
         Scales each scan in the dataset to be between zero and one, then
         resizes all scans and targets to have the same width and height.
@@ -84,24 +86,27 @@ class Dataset(object):
         It also turns the target into a one-hot encoded tensor of shape:
         [depth, width, height, num_classes].
 
-        Finally, it ensures that all patients have the same number of depth(s),
-        i.e. their tensors have the same  dimensions. Defaults: 24 and 32.
+        Finally it ensures that all patients have at maximum `max_scans` scans.
+        Patients with fewer scans will be padded with zeros. Extra scans of
+        patients who have more (around 5% of the dataset) will be discarded.
         This is to ensure that a 3D U-Net with depth 4 can be built, i.e. the
         downsampled layer of the maxpooling and the upsampled layer of the
-        transponsed convolution are guaranteed to have the same depth.
+        transponsed convolution are guaranteed to have the same depth and
+        shortcut connections can be made between them.
 
         Args:
             width (int): Width to resize all scans and targets in dataset.
             height (int): Height to resize all scans and targets in dataset.
-            depths (tuple <int>): Tuple of acceptable depths.
+            max_scans (tuple <int>): Maximum number of scans to keep.
         """
         for i, patient in enumerate(self.patients.values()):
-            log.info('Preprocessing data of patient %d/%d' % (
-                i, len(self.patients.values())))
             patient.normalise_scans()
             patient.resize_and_reshape(width=width, height=height)
-            patient.adjust_depth(depths=depths)
+            patient.adjust_depth(max_scans=max_scans)
             patient.preprocessed = True
+
+            log.info('Preprocessing data of patient %d/%d' % (
+                i, len(self.patients.values())))
 
     def save_dataset(self, path):
         """
@@ -125,7 +130,7 @@ class Dataset(object):
         """
         return pickle.load(open(path, 'rb'))
 
-    def create_tf_dataset(self):
+    def create_tf_dataset(self, num_classes=3):
         """
         Creates a TensorFlow DataSet from the DataSet. Note, this has to be
         run after all the MRI scans have been rescaled to the same size. They
@@ -136,38 +141,25 @@ class Dataset(object):
         """
 
         # extract all scans and segmentation images from every patient
-        x_all = [p.scans for p in self.patients.values()]
-        y_all = [p.seg for p in self.patients.values()]
+        scans_segs = [(p.scans, p.seg) for p in self.patients.values()]
+        _, width, height = scans_segs[0][0].shape
 
-        # extract depths, width and height, num_classes from the dataset
-        depths = list(set([x.shape[0] for x in x_all]))
-        _, width, height = x_all[0].shape
-        num_classes = y_all[0].shape[-1]
+        def gen_scans_segs():
+            """
+            Generator function for dataset creation.
+            """
+            for s in scans_segs:
+                # add channel dimension to scans
+                x = s[0].reshape((-1, width, height, 1))
+                yield (x, s[1])
 
-        datasets = []
-        for depth in depths:
-            # select patients with the right number of scans
-            x_depth = [x for x in x_all if x.shape[0] == depth]
-            y_depth = [y for y in y_all if y.shape[0] == depth]
-            # reshape dataset from list of 3d volumes into 5d volume
-            x_depth = np.concatenate(x_depth).reshape(
-                (-1, depth, width, height, 1)
+        return tf.data.Dataset.from_generator(
+            generator=gen_scans_segs,
+            output_types=(tf.float32, tf.int32),
+            output_shapes=(
+                [None, width, height, 1], [None, 128, 128, num_classes]
             )
-            y_depth = np.concatenate(y_depth).reshape(
-                (-1, depth, width, height, num_classes)
-            )
-            datasets.append(
-                tf.data.Dataset.from_tensor_slices((x_depth, y_depth))
-            )
-
-        # concatenate all tf datasets into a single one
-        if len(datasets) == 1:
-            merged_dataset = datasets[0]
-        else:
-            merged_dataset = datasets.pop(0)
-            for dataset in datasets:
-                merged_dataset = merged_dataset.concatenate(dataset)
-        return merged_dataset
+        )
 
 
 class Patient(object):
@@ -179,8 +171,8 @@ class Patient(object):
         Class initialiser.
 
         Args:
-            scan (str): Path to one MRI scan file.
-            seg (str): Path to the segmentation file.
+            scan (:class:`pydicom.dataset.FileDataset'): A loaded MRI scan.
+            seg (:class:`numpy.ndarray`): A loaded segmentation file.
         """
         self.scans = list()
         # make depth the first dim as with the scans
@@ -262,10 +254,12 @@ class Patient(object):
         )
         self.seg = seg.astype(int)
 
-    def adjust_depth(self, depths):
+    def adjust_depth(self, max_scans):
         """
         There's a wide range of scan numbers across the patients. We need to
-        unify these so they can be fed into the network.
+        unify these so they can be fed into the network. We discard extra
+        scans (i.e. more than the `max_scans`) and patients with less will be
+        padded with zeros by TensorFlow.
 
         This is to ensure that a 3D U-Net with depth 4 can be built, i.e. the
         downsampled layer of the maxpooling and the upsampled layer of the
@@ -275,47 +269,59 @@ class Patient(object):
         converted to a one hot encoded version with `resize_and_reshape`.
 
         Args:
-            depths (tuple <int>): Tuple of acceptable depths.
+            max_scans (tuple <int>): Maximum number of scans to keep.
         """
-        depth, width, height = self.scans.shape
+        self.scans = self.scans[:max_scans]
+        self.seg = self.seg[:max_scans]
 
-        # find which acceptable depth we should use
-        depths = np.array(depths)
-        new_depth = depths[np.argmin(np.abs(depths - depth))]
-        depth_delta = np.abs(new_depth - depth)
+    def patient_tile_scans(self):
+        """
+        Generates a tiled image, visualising all the scans of a patient.
+        """
+        Patient.tile_scans(self.scans, self.seg, self.preprocessed)
 
-        # we need to adjust the depth
-        if depth_delta != 0:
-            # pad scans and seg with repeating last scan
-            if new_depth > depth:
-                to_add = np.repeat(self.scans[-1:, :, :], depth_delta, axis=0)
-                self.scans = np.concatenate((self.scans, to_add), axis=0)
-
-                to_add = np.repeat(self.seg[-1:, :, :, :], depth_delta, axis=0)
-                self.seg = np.concatenate((self.seg, to_add), axis=0)
-            # delete last few scans and segs
-            else:
-                self.scans = self.scans[:new_depth, :, :]
-                self.seg = self.seg[:new_depth, :, :, :]
-
-    def anim_scans(self):
+    def patient_anim_scans(self):
         """
         Generates an animation for IPython, visualising all the scans of a
         patient.
         """
+        Patient.anim_scans(self.scans, self.seg, self.preprocessed)
+
+    @staticmethod
+    def anim_scans(scans, seg, preprocessed):
+        """
+        Generates an animation for IPython, visualising all the scans of a
+        patient.
+
+        Args:
+            scans (:class:`numpy.array`): MRI image with shape
+                [depth, width, height]
+            seg (:class:`numpy.array`): MRI image segmentation with shape
+                [depth, width, height]
+            preprocessed (bool): Whether the scans been preprocessed.
+        """
         fig, ax = plt.subplots()
-        for i, scan in enumerate(self.scans):
-            img = self.concat_scan_seg(i)
+        for i, scan in enumerate(scans):
+            img = Patient.concat_scan_seg(scans, seg, i, preprocessed)
             plt.imshow(img, cmap=plt.cm.bone)
             clear_output(wait=True)
             display(fig)
         plt.show()
-        
-    def show_scans(self):
+
+    @staticmethod
+    def tile_scans(scans, seg, preprocessed):
         """
         Generates a tiled image, visualising all the scans of a patient.
+
+        Args:
+            scans (:class:`numpy.array`): MRI image with shape
+                [depth, width, height]
+            seg (:class:`numpy.array`): MRI image segmentation with shape
+                [depth, width, height]
+            preprocessed (bool): Whether the scans been preprocessed.
         """
-        n_scans = self.scans.shape[0]
+
+        n_scans = scans.shape[0]
         cols = int(np.ceil(np.power(n_scans, 1/3)))
         rows = cols * 2
         if cols * rows < n_scans:
@@ -326,30 +332,34 @@ class Patient(object):
             row_ind = int(i / cols)
             col_ind = int(i % cols)
             if i < n_scans:
-                img = self.concat_scan_seg(i)
+                img = Patient.concat_scan_seg(scans, seg, i, preprocessed)
                 ax[row_ind, col_ind].set_title('slice %d' % (i + 1))
                 ax[row_ind, col_ind].imshow(img, cmap=plt.cm.bone)
             ax[row_ind, col_ind].axis('off')
         plt.show()
-        
-    def concat_scan_seg(self, i):
+
+    @staticmethod
+    def concat_scan_seg(scans, seg, i, preprocessed):
         """
         Helper function, that concatenates the MRI image with its corresponding
-        segmentation image file and rescales the latter so their colours are
-        comparable.
+        segmentation and rescales the latter so their colours are comparable.
 
         If we have preprocessed data, i.e. the target is a one hot encoded
         tensor, we use the 2nd class for visualisation.
 
         Args:
+            scans (:class:`numpy.array`): MRI image with shape
+                [depth, width, height]
+            seg (:class:`numpy.array`): MRI image segmentation with shape
+                [depth, width, height]
             i (int): Index of scan in the patient's list of scans.
-
+            preprocessed (bool): Whether the scans been preprocessed.
         """
-        scan = self.scans[i]
+        scan = scans[i]
         # if we have preprocessed data use class 2 from target/segmentation
-        if self.preprocessed:
-            seg = self.seg[i, :, :, 1] * scan.max()
+        if preprocessed:
+            seg = seg[i, :, :, 1] * scan.max()
         else:
-            seg = self.seg[i] * (scan.max() / 2)
+            seg = seg[i] * (scan.max() / 2)
         return np.hstack([scan, seg])
 
