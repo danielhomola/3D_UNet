@@ -116,7 +116,7 @@ python train.py
 or
 
 ```bash
-$ python train.py --help
+python src/main.py -h
 usage: train.py [-h] [--epochs EPOCHS] [--batch-size BATCH_SIZE]
                 [--logdir LOGDIR] [--reg REG] [--ckdir CKDIR]
 

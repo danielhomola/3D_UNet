@@ -9,8 +9,6 @@ import tensorflow as tf
 
 from src.network import unet_3d_network
 
-tf.logging.set_verbosity(tf.logging.INFO)
-
 
 def model_fn(features, labels, mode, params):
     """
@@ -25,13 +23,13 @@ def model_fn(features, labels, mode, params):
         labels: This is batch_labels from input_fn.
         mode (:class:`tf.estimator.ModeKeys`): Train, eval, or predict.
         params (dict): Params for setting up the model. Expected keys are:
-            feature_columns (list <:class:`tf.feature_column`>): Feature types.
             depth (int): Depth of the architecture.
             n_base_filters (int): Number of conv3d filters in the first layer.
             num_classes (int): Number of mutually exclusive output classes.
             class_weights (:class:`numpy.array`): Weight of each class to use.
             learning_rate (float): LR to use with Adam.
             batch_norm (bool): Whether to use batch_norm in the conv3d blocks.
+            display_steps (int): How often to log about progress.
 
     Returns:
         :class:`tf.estimator.Estimator`: A 3D U-Net network, as TF Estimator.
@@ -70,6 +68,7 @@ def model_fn(features, labels, mode, params):
         onehot_labels=labels,
         weights=class_weights
     )
+    tf.summary.scalar('loss', loss)
 
     # -------------------------------------------------------------------------
     # metrics: mean IOU - for TRAIN and EVAL modes
@@ -83,9 +82,6 @@ def model_fn(features, labels, mode, params):
         name='iou_op'
     )
     metrics = {'iou': iou}
-
-    # save metric both for logging and for tensorboard
-    tf.identity(iou[0], name='train_iou')
     tf.summary.scalar('iou', iou[0])
 
     if mode == tf.estimator.ModeKeys.EVAL:
@@ -98,12 +94,11 @@ def model_fn(features, labels, mode, params):
 
     assert mode == tf.estimator.ModeKeys.TRAIN
 
-    # as per TF batch_norm docs and also following https://goo.gl/1UVeYK
-
+    
     optimizer = tf.train.AdamOptimizer(learning_rate=params['learning_rate'])
     global_step = tf.train.get_or_create_global_step()
     if params['batch_norm']:
-        # Add dependency to update the moving mean and variance of batch norm
+        # as per TF batch_norm docs and also following https://goo.gl/1UVeYK
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
         with tf.control_dependencies(update_ops):
             train_op = optimizer.minimize(loss, global_step=global_step)

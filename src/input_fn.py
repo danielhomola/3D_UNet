@@ -5,8 +5,10 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import os
 import tensorflow as tf
 from src.data_utils import Dataset
+
 
 
 def input_fn(training, params):
@@ -18,33 +20,41 @@ def input_fn(training, params):
         training (bool): Whether we are training or testing.
         params (dict): Params for setting up the data. Expected keys are:
             max_scans (int): Maximum number of scans we see in any patient.
-            img_size (int): Width and height of the resized training images.
+            train_img_size (int): Width and height of resized training images.
             batch_size (int): Number of of patient in each batch for training.
             num_classes (int): Number of mutually exclusive output classes.
 
     Returns:
         :class:`tf.dataset.Dataset`: An instantiated Dataset object.
     """
-
+    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
     # for training we use a batch number and pad each 3D scan to have equal
     # depth, width and height have already been set to 128 in preprocessing
+    max_s = params['max_scans']
+    w = h = params['train_img_size']
     if training:
-        dataset = Dataset.load_dataset('../data/processed/train_dataset.pckl')
-        max_s = params['max_scans']
-        w = h = params['img_size']
-
-        dataset = dataset.create_tf_dataset().shuffle(
-            70
+        dataset = Dataset.load_dataset(
+            '%s/data/processed/train_dataset.pckl' % package_root
+        ).create_tf_dataset().shuffle(
+            # we have 70 train examples, this will provide good shuffling
+            buffer_size=70 
         ).repeat().padded_batch(
             batch_size=params['batch_size'],
             padded_shapes=(
             [max_s, w, h, 1], [max_s, w, h, params['num_classes']])
         )
 
-    #
+    # for testing we use the unscaled images with their original dims,
+    # we still pad the depth dimension to max_s though
     else:
-        dataset = Dataset.load_dataset('../data/processed/test_dataset.pckl')
-        dataset.create_tf_dataset().batch(1)
+        dataset = Dataset.load_dataset(
+            '%s/data/processed/test_dataset.pckl' % package_root
+        ).create_tf_dataset().padded_batch(
+            batch_size=1,
+            padded_shapes=(
+            [max_s, None, None, 1], [max_s, None, None, params['num_classes']])
+        )
 
     iterator = tf.data.Iterator.from_structure(
         dataset.output_types,

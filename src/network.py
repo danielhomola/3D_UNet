@@ -11,7 +11,6 @@ import logging
 import tensorflow as tf
 
 log = logging.getLogger('tensorflow')
-tf.logging.set_verbosity(tf.logging.INFO)
 
 
 def unet_3d_network(inputs, params, training):
@@ -23,7 +22,7 @@ def unet_3d_network(inputs, params, training):
     TF implementation: https://github.com/zhengyang-wang/3D-Unet--Tensorflow
     Keras implementation: https://github.com/ellisdg/3DUnetCNN
 
-    If logging is set to debug, it will print out the size of each layer.
+    If logging is set to info, it will print out the size of each layer.
 
     Args:
         inputs (:class:`tf.Tensor`): 5D tensor input to the network.
@@ -79,7 +78,7 @@ def unet_3d_network(inputs, params, training):
             part='analysis',
             layer_depth=layer_depth,
         )
-        log.debug('conv1: %s' % layer1.shape)
+        log.info('conv1: %s' % layer1.shape)
 
         layer2 = conv3d_bn_relu(
             inputs=layer1,
@@ -93,7 +92,7 @@ def unet_3d_network(inputs, params, training):
             layer_depth=layer_depth,
         )
         concat_layer_sizes.append(conv2_filters)
-        log.debug('conv2: %s' % layer2.shape)
+        log.info('conv2: %s' % layer2.shape)
 
         # add max pooling unless we're at the end of the bottleneck
         if layer_depth < depth - 1:
@@ -104,7 +103,7 @@ def unet_3d_network(inputs, params, training):
                 padding=padding,
                 name=create_name('analysis', 'maxpool', layer_depth)
             )
-            log.debug('maxpool layer: %s' % current_layer.shape)
+            log.info('maxpool layer: %s' % current_layer.shape)
             levels.append([layer1, layer2, current_layer])
         else:
             current_layer = layer2
@@ -127,8 +126,8 @@ def unet_3d_network(inputs, params, training):
             use_bias=False,
             name=create_name('synthesis', 'upconv', layer_depth)
         )
-        log.debug('upconv layer: %s' % up_conv.shape)
-        log.debug('concat layer: %s' % levels[layer_depth][1].shape)
+        log.info('upconv layer: %s' % up_conv.shape)
+        log.info('concat layer: %s' % levels[layer_depth][1].shape)
         # concat with appropriate layer of analysis path
         concat = tf.concat(
             [up_conv, levels[layer_depth][1]],
@@ -149,7 +148,7 @@ def unet_3d_network(inputs, params, training):
             layer_depth=layer_depth
         )
 
-        log.debug('up_conv layer1: %s' % current_layer.shape)
+        log.info('up_conv layer1: %s' % current_layer.shape)
         current_layer = conv3d_bn_relu(
             inputs=current_layer,
             filters=concat_layer_sizes[layer_depth],
@@ -161,7 +160,7 @@ def unet_3d_network(inputs, params, training):
             part='synthesis2',
             layer_depth=layer_depth
         )
-        log.debug('up_conv layer2 : %s' % current_layer.shape)
+        log.info('up_conv layer2 : %s' % current_layer.shape)
 
     # final 1 x 1 x 1 conv3d layer
     logits = tf.layers.conv3d(

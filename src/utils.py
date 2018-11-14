@@ -51,18 +51,13 @@ def set_logger(log_path):
     Args:
         log_path: (string) where to log
     """
-    logger = logging.getLogger()
+    logger = logging.getLogger('tensorflow')
     logger.setLevel(logging.INFO)
-
-    if not logger.handlers:
-        # Logging to a file
-        file_handler = logging.FileHandler(log_path)
-        file_handler.setFormatter(
-            logging.Formatter('%(asctime)s:%(levelname)s: %(message)s')
-        )
-        logger.addHandler(file_handler)
-
-        # Logging to console
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(logging.Formatter('%(message)s'))
-        logger.addHandler(stream_handler)
+    
+    # Log to model folder to a file to not just to console
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setFormatter(
+        logging.Formatter('%(asctime)s:%(levelname)s: %(message)s')
+    )
+    logger.addHandler(file_handler)
+    return logger
