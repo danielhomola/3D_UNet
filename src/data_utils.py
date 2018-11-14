@@ -160,7 +160,7 @@ class Dataset(object):
             generator=gen_scans_segs,
             output_types=(tf.float32, tf.int32),
             output_shapes=(
-                [None, width, height, 1], [None, 128, 128, num_classes]
+                [None, width, height, 1], [None, width, height, num_classes]
             )
         )
 

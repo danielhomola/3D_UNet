@@ -17,13 +17,9 @@ requirements: test_environment
 	pip install -U pip setuptools wheel
 	pip install -r requirements.txt
 
-## Fresh Training
-fresh:
-	rm -rf logdir models
-
-## Run tensorboard
+## Run tensorboard with base model
 tensorboard:
-	tensorboard --logdir logdir
+	tensorboard --logdir models/base_model/
 
 ## Delete all compiled Python files
 clean:

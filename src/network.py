@@ -2,7 +2,6 @@
 Simple implementation of 3D U-Net building function.
 Original paper: https://arxiv.org/abs/1606.06650
 """
-
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -29,11 +28,10 @@ def unet_3d_network(inputs, params, training):
     Args:
         inputs (:class:`tf.Tensor`): 5D tensor input to the network.
         params (dict): Params for setting up the model. Expected keys are:
-            feature_columns (list <:class:`tf.feature_column`>): Feature types.
             depth (int): Depth of the architecture.
             n_base_filters (int): Number of conv3d filters in the first layer.
             num_classes (int): Number of mutually exclusive output classes.
-            class_weights (:class:`numpy.array`): Weight of each class to use.
+            batch_norm (bool): Whether to use batch_norm in the conv3d blocks.
         training (bool): Whether we are training or not, important for BN.
 
     Returns:
@@ -46,8 +44,9 @@ def unet_3d_network(inputs, params, training):
 
     # extract model params
     depth = params['depth']
-    n_base_filters = params['n_base_filters=16']
+    n_base_filters = params['n_base_filters']
     num_classes = params['num_classes']
+    batch_norm = params['batch_norm']
 
     # additional model params that are currently baked into the model_fn
     conv_size = 3
@@ -75,6 +74,7 @@ def unet_3d_network(inputs, params, training):
             kernel=conv_size,
             strides=conv_strides,
             padding=padding,
+            batch_norm=batch_norm,
             training=training,
             part='analysis',
             layer_depth=layer_depth,
@@ -87,6 +87,7 @@ def unet_3d_network(inputs, params, training):
             kernel=conv_size,
             strides=conv_strides,
             padding=padding,
+            batch_norm=batch_norm,
             training=training,
             part='analysis',
             layer_depth=layer_depth,
@@ -142,6 +143,7 @@ def unet_3d_network(inputs, params, training):
             kernel=conv_size,
             strides=conv_strides,
             padding=padding,
+            batch_norm=batch_norm,
             training=training,
             part='synthesis',
             layer_depth=layer_depth
@@ -154,8 +156,9 @@ def unet_3d_network(inputs, params, training):
             kernel=conv_size,
             strides=conv_strides,
             padding=padding,
+            batch_norm=batch_norm,
             training=training,
-            part='synthesis',
+            part='synthesis2',
             layer_depth=layer_depth
         )
         log.debug('up_conv layer2 : %s' % current_layer.shape)
@@ -174,7 +177,7 @@ def unet_3d_network(inputs, params, training):
 
 
 def conv3d_bn_relu(inputs, filters, kernel, strides, padding,
-                   part, layer_depth, training):
+                   batch_norm, training, part, layer_depth):
     """
     Basic conv3d > Batch Normalisation > Relu building block for the network.
 
@@ -184,11 +187,13 @@ def conv3d_bn_relu(inputs, filters, kernel, strides, padding,
         kernel (int): See conv3D TF docs.
         strides (int): See conv3D TF docs.
         padding (str): See conv3D TF docs.
-        part (str): Needed for name generation.
-        layer_depth (int): Needed for name generation.
+        batch_norm (bool): Whether to use batch_norm in the conv3d blocks.
         training (bool): Whether we are training or not, important for the
             batch normalisation layer. At inference time we need the
             population mean and variance instead of the batch one.
+        part (str): Needed for name generation.
+        layer_depth (int): Needed for name generation.
+
 
     Returns:
         :class:`tf.Tensor`: Relu(BatchNorm(Conv3D))
@@ -200,25 +205,26 @@ def conv3d_bn_relu(inputs, filters, kernel, strides, padding,
         strides=strides,
         padding=padding,
         use_bias=False,
-        name=create_name(part, 'conv3d%d' % filters, layer_depth)
+        name=create_name(part, 'conv3d_%d' % filters, layer_depth)
     )
-    layer = tf.layers.batch_normalization(
-        inputs=layer,
-        training=training,
-        axis=-1,
-        fused=True,
-        name=create_name(part, 'batch_norm%d' % filters, layer_depth)
-    )
+    if batch_norm:
+        layer = tf.layers.batch_normalization(
+            inputs=layer,
+            training=training,
+            axis=-1,
+            fused=True,
+            name=create_name(part, 'batch_norm_%d' % filters, layer_depth)
+        )
     layer = tf.nn.relu(
         layer,
-        name=create_name(part, 'relu%d' % filters, layer_depth)
+        name=create_name(part, 'relu_%d' % filters, layer_depth)
     )
     return layer
 
 
 def create_name(part, layer, i):
     """
-    Helper function for generating name strings for layers.
+    Helper function for generating names for layers.
 
     Args:
         part (str): Part/path the layer belongs to.
@@ -228,4 +234,4 @@ def create_name(part, layer, i):
     Returns:
         str: Concatenated layer name.
     """
-    return "%s_%s_%d" % (part, layer, i)
+    return "%s_%s_l%d" % (part, layer, i)
