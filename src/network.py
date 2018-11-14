@@ -1,16 +1,21 @@
 """
-This module builds a 3D U-Net network.
+Simple implementation of 3D U-Net building function.
 Original paper: https://arxiv.org/abs/1606.06650
 """
+
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import logging
 
 import tensorflow as tf
 
 log = logging.getLogger('tensorflow')
+tf.logging.set_verbosity(tf.logging.INFO)
 
 
-def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
+def unet_3d_network(inputs, params, training):
     """
     Simple implementation of 3D U-Net building function.
     Original paper: https://arxiv.org/abs/1606.06650
@@ -19,55 +24,83 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
     TF implementation: https://github.com/zhengyang-wang/3D-Unet--Tensorflow
     Keras implementation: https://github.com/ellisdg/3DUnetCNN
 
+    If logging is set to debug, it will print out the size of each layer.
+
     Args:
         inputs (:class:`tf.Tensor`): 5D tensor input to the network.
-        num_classes (int): Number of mutually exclusive output classes.
-        depth (int): Depth of the architecture.
-        n_base_filters (int): Number of conv3d filters in the first layer.
-        training (bool): Whether we are training or not, important for the
-            batch normalisation layer. At inference time we need the
-            population mean and variance instead of the batch one.
+        params (dict): Params for setting up the model. Expected keys are:
+            feature_columns (list <:class:`tf.feature_column`>): Feature types.
+            depth (int): Depth of the architecture.
+            n_base_filters (int): Number of conv3d filters in the first layer.
+            num_classes (int): Number of mutually exclusive output classes.
+            class_weights (:class:`numpy.array`): Weight of each class to use.
+        training (bool): Whether we are training or not, important for BN.
 
     Returns:
-        :class:`tf.Tensor`: 3D U-Net network.
+        :class:`tf.Tensor`: Final logits layer of the network.
     """
+
+    # -------------------------------------------------------------------------
+    # setup
+    # -------------------------------------------------------------------------
+
+    # extract model params
+    depth = params['depth']
+    n_base_filters = params['n_base_filters=16']
+    num_classes = params['num_classes']
+
+    # additional model params that are currently baked into the model_fn
+    conv_size = 3
+    conv_strides = 1
+    pooling_size = 2
+    pooling_strides = 2
+    padding = 'same'
+
+    # variables to track architecture building with loops
     current_layer = inputs
     levels = list()
     concat_layer_sizes = list()
 
     # -------------------------------------------------------------------------
-    # analysis path
+    # network architecture: analysis path
     # -------------------------------------------------------------------------
 
     for layer_depth in range(depth):
         # two conv3d > batch norm > relu blocks
-        n_filters = n_base_filters * (2 ** layer_depth)
+        conv1_filters = n_base_filters * (2 ** layer_depth)
+        conv2_filters = conv1_filters * 2
         layer1 = conv3d_bn_relu(
             inputs=current_layer,
+            filters=conv1_filters,
+            kernel=conv_size,
+            strides=conv_strides,
+            padding=padding,
+            training=training,
             part='analysis',
             layer_depth=layer_depth,
-            filters=n_filters,
-            training=training
         )
         log.debug('conv1: %s' % layer1.shape)
 
         layer2 = conv3d_bn_relu(
             inputs=layer1,
-            part='analysis2',
+            filters=conv2_filters,
+            kernel=conv_size,
+            strides=conv_strides,
+            padding=padding,
+            training=training,
+            part='analysis',
             layer_depth=layer_depth,
-            filters=n_filters * 2,
-            training=training
         )
-        concat_layer_sizes.append(n_filters * 2)
+        concat_layer_sizes.append(conv2_filters)
         log.debug('conv2: %s' % layer2.shape)
 
         # add max pooling unless we're at the end of the bottleneck
         if layer_depth < depth - 1:
             current_layer = tf.layers.max_pooling3d(
                 inputs=layer2,
-                pool_size=(2, 2, 2),
-                strides=(2, 2, 2),
-                padding='valid',
+                pool_size=pooling_size,
+                strides=pooling_strides,
+                padding=padding,
                 name=create_name('analysis', 'maxpool', layer_depth)
             )
             log.debug('maxpool layer: %s' % current_layer.shape)
@@ -77,7 +110,7 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
             levels.append([layer1, layer2])
 
     # -------------------------------------------------------------------------
-    # synthesis path
+    # network architecture: synthesis path
     # -------------------------------------------------------------------------
 
     for layer_depth in range(depth - 2, -1, -1):
@@ -86,9 +119,9 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         up_conv = tf.layers.conv3d_transpose(
             inputs=current_layer,
             filters=n_filters * 2,
-            kernel_size=(2, 2, 2),
-            strides=(2, 2, 2),
-            padding='same',
+            kernel_size=pooling_size,
+            strides=pooling_strides,
+            padding=padding,
             # see https://github.com/tensorflow/tensorflow/issues/10520
             use_bias=False,
             name=create_name('synthesis', 'upconv', layer_depth)
@@ -105,48 +138,54 @@ def unet_3d(inputs, num_classes=3, depth=4, n_base_filters=16, training=True):
         # two conv3d > batch norm > relu blocks
         current_layer = conv3d_bn_relu(
             inputs=concat,
-            part='synthesis',
-            layer_depth=layer_depth,
             filters=concat_layer_sizes[layer_depth],
-            training=training
+            kernel=conv_size,
+            strides=conv_strides,
+            padding=padding,
+            training=training,
+            part='synthesis',
+            layer_depth=layer_depth
         )
+
         log.debug('up_conv layer1: %s' % current_layer.shape)
         current_layer = conv3d_bn_relu(
             inputs=current_layer,
-            part='synthesis2',
-            layer_depth=layer_depth,
             filters=concat_layer_sizes[layer_depth],
-            training=training
+            kernel=conv_size,
+            strides=conv_strides,
+            padding=padding,
+            training=training,
+            part='synthesis',
+            layer_depth=layer_depth
         )
         log.debug('up_conv layer2 : %s' % current_layer.shape)
 
-    # final conv3d layer
-    output_layer = tf.layers.conv3d(
+    # final 1 x 1 x 1 conv3d layer
+    logits = tf.layers.conv3d(
         inputs=current_layer,
         filters=num_classes,
-        kernel_size=(1, 1, 1),
-        strides=(1, 1, 1),
+        kernel_size=1,
+        strides=1,
         use_bias=True,
         name=create_name('synthesis', 'final_conv3d', 0)
     )
-    log.debug('output layer:: %s' % output_layer.shape)
-    return output_layer
+    log.debug('output layer:: %s' % logits.shape)
+    return logits
 
 
-def conv3d_bn_relu(inputs, filters, part, layer_depth,
-                   kernel=(3, 3, 3), strides=(1, 1, 1),
-                   padding='same', training=True):
+def conv3d_bn_relu(inputs, filters, kernel, strides, padding,
+                   part, layer_depth, training):
     """
     Basic conv3d > Batch Normalisation > Relu building block for the network.
 
     Args:
         inputs (:class:`tf.Tensor`): 5D tensor input to the block.
-        filters (tuple): See conv3D TF docs.
+        filters (int): See conv3D TF docs.
+        kernel (int): See conv3D TF docs.
+        strides (int): See conv3D TF docs.
+        padding (str): See conv3D TF docs.
         part (str): Needed for name generation.
         layer_depth (int): Needed for name generation.
-        kernel (tuple): See conv3D TF docs.
-        strides (tuple): See conv3D TF docs.
-        padding (str): See conv3D TF docs.
         training (bool): Whether we are training or not, important for the
             batch normalisation layer. At inference time we need the
             population mean and variance instead of the batch one.
@@ -161,18 +200,18 @@ def conv3d_bn_relu(inputs, filters, part, layer_depth,
         strides=strides,
         padding=padding,
         use_bias=False,
-        name=create_name(part, 'conv3d', layer_depth)
+        name=create_name(part, 'conv3d%d' % filters, layer_depth)
     )
     layer = tf.layers.batch_normalization(
         inputs=layer,
         training=training,
         axis=-1,
         fused=True,
-        name=create_name(part, 'batch_norm', layer_depth)
+        name=create_name(part, 'batch_norm%d' % filters, layer_depth)
     )
     layer = tf.nn.relu(
         layer,
-        name=create_name(part, 'relu', layer_depth)
+        name=create_name(part, 'relu%d' % filters, layer_depth)
     )
     return layer
 

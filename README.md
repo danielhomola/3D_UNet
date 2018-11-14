@@ -65,14 +65,6 @@ Class labels: 0: background, 1: central gland , 2: peripheral zone
 
 ## Get Started
 
-### Download dataset
-
-- The dataset was downloaded from [here](https://wiki.cancerimagingarchive.net/display/DOI/NCI-ISBI+2013+Challenge%3A+Automated+Segmentation+of+Prostate+Structures).
-- As per the instructions, the training (60) and leaderboard (10)
-subjects were pooled to form the train dataset (1816 scans in total).
-- The test dataset consists of 10 patients with 271 scans.
-
-
 ### Setup project
 
 - Create new Python3 `virtualenv` (assumes you have `virtualenv` and
@@ -91,6 +83,14 @@ Additional helper functions can be explored with.
 make help
 ```
 
+
+### Download dataset
+
+- The dataset was downloaded from [here](https://wiki.cancerimagingarchive.net/display/DOI/NCI-ISBI+2013+Challenge%3A+Automated+Segmentation+of+Prostate+Structures).
+- As per the instructions, the training (60) and leaderboard (10)
+subjects were pooled to form the train dataset (1816 scans in total).
+- The test dataset consists of 10 patients with 271 scans.
+- Unzip them and place them in data/raw.
 
 ### Explore and preprocess data
 

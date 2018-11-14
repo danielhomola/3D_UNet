@@ -2,6 +2,9 @@
 Classes for loading and visualising MRI scans with their corresponding
 segmentation file for all patients in a dataset.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import re
 import pickle
