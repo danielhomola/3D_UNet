@@ -106,31 +106,63 @@ test datasets.
 jupyter notebook "notebooks/data_exploration.ipynb"
 ```
 
-### Train
+### Train and evaluate
+
+Train model on train set and evaluate it on test set using the base
+model architecture.
 
 ```bash
-# Train for 1 epoch
-python train.py
+python src/main.py -model_dir models/base_model -mode train_eval
 ```
 
-or
+Do the same with same parameters but without batch normalisation.
+
+```bash
+python src/main.py -model_dir models/base_model_no_bn -mode train_eval
+```
+
+
+For more options:
 
 ```bash
 python src/main.py -h
-usage: train.py [-h] [--epochs EPOCHS] [--batch-size BATCH_SIZE]
-                [--logdir LOGDIR] [--reg REG] [--ckdir CKDIR]
+
+usage: main.py [-h] -model_dir MODEL_DIR [-mode MODE]
+               [-pred_ix PRED_IX [PRED_IX ...]]
+
+Train, eval, predict 3D U-Net model.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --epochs EPOCHS       Number of epochs (default: 1)
-  --batch-size BATCH_SIZE
-                        Batch size (default: 4)
-  --logdir LOGDIR       Tensorboard log directory (default: logdir)
-  --reg REG             L2 Regularizer Term (default: 0.1)
-  --ckdir CKDIR         Checkpoint directory (default: models)
+  -model_dir MODEL_DIR  Experiment directory containing params.json
+  -mode MODE            One of train, train_eval, eval, predict.
+  -pred_ix PRED_IX [PRED_IX ...]
+                        Space separated list of indices of patients to
+                        predict.
+usage: main.py [-h] -model_dir MODEL_DIR [-mode MODE]
+               [-pred_ix PRED_IX [PRED_IX ...]]
+
+Train, eval, predict 3D U-Net model.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -model_dir MODEL_DIR  Experiment directory containing params.json
+  -mode MODE            One of train, train_eval, eval, predict.
+  -pred_ix PRED_IX [PRED_IX ...]
+                        Space separated list of indices of patients to
+                        predict.
 ```
 
-### Test
+### Predict
+
+Predict all 10 patients in test set with the trained base model and
+save their predictions to model directory.
+
+
+```bash
+python src/main.py -model_dir models/base_model -mode predict - pred_ix 0 1 2 3 4 5 6 7 8 9
+
+```
 
 - Open the Jupyter notebook file to run against test data
 

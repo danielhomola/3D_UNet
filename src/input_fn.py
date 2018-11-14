@@ -10,7 +10,6 @@ import tensorflow as tf
 from src.data_utils import Dataset
 
 
-
 def input_fn(training, params):
     """
     Simple input_fn for our 3D U-Net estimator, handling train and test data
@@ -23,6 +22,10 @@ def input_fn(training, params):
             train_img_size (int): Width and height of resized training images.
             batch_size (int): Number of of patient in each batch for training.
             num_classes (int): Number of mutually exclusive output classes.
+            train_dataset_path (str): Path to pickled
+                :class:`src.data_utils.Dataset` object.
+            test_dataset_path (str): Path to pickled
+                :class:`src.data_utils.Dataset` object.
 
     Returns:
         :class:`tf.dataset.Dataset`: An instantiated Dataset object.
@@ -35,7 +38,7 @@ def input_fn(training, params):
     w = h = params['train_img_size']
     if training:
         dataset = Dataset.load_dataset(
-            '%s/data/processed/train_dataset.pckl' % package_root
+            os.path.join(package_root, params['train_dataset_path'])
         ).create_tf_dataset().shuffle(
             # we have 70 train examples, this will provide good shuffling
             buffer_size=70 
@@ -49,7 +52,7 @@ def input_fn(training, params):
     # we still pad the depth dimension to max_s though
     else:
         dataset = Dataset.load_dataset(
-            '%s/data/processed/test_dataset.pckl' % package_root
+            os.path.join(package_root, params['test_dataset_path'])
         ).create_tf_dataset().padded_batch(
             batch_size=1,
             padded_shapes=(

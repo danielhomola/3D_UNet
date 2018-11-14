@@ -10,13 +10,13 @@ import re
 import pickle
 import logging
 
-#import skimage
-#import pydicom
-#import nrrd
+import skimage
+import pydicom
+import nrrd
 import numpy as np
 import tensorflow as tf
-#import matplotlib.pyplot as plt
-#from IPython.display import display, clear_output
+import matplotlib.pyplot as plt
+from IPython.display import display, clear_output
 
 log = logging.getLogger('tensorflow')
 

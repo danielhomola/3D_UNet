@@ -19,104 +19,56 @@
 
 \refsection{0}
   \sortlist[entry]{nty/global}
-    \entry{hadash2018estimate}{article}{}
-      \name{author}{6}{}{%
-        {{hash=052e6bd4c478b36dd81cad4f79b14b7d}{%
-           family={Hadash},
-           family_i={H\bibinitperiod},
-           given={Guy},
-           given_i={G\bibinitperiod}}}%
-        {{hash=c7e0836762952ec63b452768b4823649}{%
-           family={Kermany},
-           family_i={K\bibinitperiod},
-           given={Einat},
-           given_i={E\bibinitperiod}}}%
-        {{hash=849f9bd8602f19c7ea3173d5b99d9604}{%
-           family={Carmeli},
+    \entry{_i_ek_2016}{article}{}
+      \name{author}{5}{}{%
+        {{hash=ae0f9ca853ff30a5586bdeb9d8f184ee}{%
+           family={Cicek},
            family_i={C\bibinitperiod},
-           given={Boaz},
-           given_i={B\bibinitperiod}}}%
-        {{hash=f7d95641b3cd09d72892eb2bf5df4191}{%
-           family={Lavi},
-           family_i={L\bibinitperiod},
-           given={Ofer},
+           given={Ozgun},
            given_i={O\bibinitperiod}}}%
-        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
-           family={Kour},
-           family_i={K\bibinitperiod},
-           given={George},
-           given_i={G\bibinitperiod}}}%
-        {{hash=a974d87b05eb5eae26333687ecf455ba}{%
-           family={Jacovi},
-           family_i={J\bibinitperiod},
-           given={Alon},
+        {{hash=dd1cd1962dcb1b6e7ba1d5e3269c1a70}{%
+           family={Abdulkadir},
+           family_i={A\bibinitperiod},
+           given={Ahmed},
            given_i={A\bibinitperiod}}}%
+        {{hash=3052262f1bb6043dae930c7a2a4ee624}{%
+           family={Lienkamp},
+           family_i={L\bibinitperiod},
+           given={Soeren\bibnamedelima S.},
+           given_i={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=b452a32296958371572717940f900884}{%
+           family={Brox},
+           family_i={B\bibinitperiod},
+           given={Thomas},
+           given_i={T\bibinitperiod}}}%
+        {{hash=8e46da9de9e53ea5d37089897d69cdd9}{%
+           family={Ronneberger},
+           family_i={R\bibinitperiod},
+           given={Olaf},
+           given_i={O\bibinitperiod}}}%
       }
-      \strng{namehash}{53599bedbcafe7b6228cf7437bba8da6}
-      \strng{fullhash}{3ba212951a1ba0ce164e8749f631f9d6}
-      \field{sortinit}{H}
-      \field{sortinithash}{82012198d5dfa657b8c4a168793268a6}
+      \list{publisher}{1}{%
+        {Springer International Publishing}%
+      }
+      \strng{namehash}{52869a220065e15ef38e4e8987c6bf63}
+      \strng{fullhash}{f1d8add19395312699ec84aca560c1a5}
+      \field{sortinit}{C}
+      \field{sortinithash}{59f25d509f3381b07695554a9f35ecb2}
       \field{labelnamesource}{author}
       \field{labeltitlesource}{title}
-      \field{journaltitle}{arXiv preprint arXiv:1804.09028}
-      \field{title}{Estimate and Replace: A Novel Approach to Integrating Deep Neural Networks with Existing Applications}
-      \field{year}{2018}
-    \endentry
-    \entry{kour2014fast}{inproceedings}{}
-      \name{author}{2}{}{%
-        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
-           family={Kour},
-           family_i={K\bibinitperiod},
-           given={George},
-           given_i={G\bibinitperiod}}}%
-        {{hash=31a608379ab90bbbd8d521eb77b31c28}{%
-           family={Saabne},
-           family_i={S\bibinitperiod},
-           given={Raid},
-           given_i={R\bibinitperiod}}}%
-      }
-      \list{organization}{1}{%
-        {IEEE}%
-      }
-      \strng{namehash}{5fef397f01a7bcf6d177446751781493}
-      \strng{fullhash}{5fef397f01a7bcf6d177446751781493}
-      \field{sortinit}{K}
-      \field{sortinithash}{a7d5b3aec5a0890aae7baf85a209abfc}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Soft Computing and Pattern Recognition (SoCPaR), 2014 6th International Conference of}
-      \field{title}{Fast classification of handwritten on-line Arabic characters}
-      \field{year}{2014}
-      \field{pages}{312\bibrangedash 318}
-      \range{pages}{7}
-    \endentry
-    \entry{kour2014real}{inproceedings}{}
-      \name{author}{2}{}{%
-        {{hash=9b0b0e834443cab53dfc687da78abd5c}{%
-           family={Kour},
-           family_i={K\bibinitperiod},
-           given={George},
-           given_i={G\bibinitperiod}}}%
-        {{hash=31a608379ab90bbbd8d521eb77b31c28}{%
-           family={Saabne},
-           family_i={S\bibinitperiod},
-           given={Raid},
-           given_i={R\bibinitperiod}}}%
-      }
-      \list{organization}{1}{%
-        {IEEE}%
-      }
-      \strng{namehash}{5fef397f01a7bcf6d177446751781493}
-      \strng{fullhash}{5fef397f01a7bcf6d177446751781493}
-      \field{sortinit}{K}
-      \field{sortinithash}{a7d5b3aec5a0890aae7baf85a209abfc}
-      \field{labelnamesource}{author}
-      \field{labeltitlesource}{title}
-      \field{booktitle}{Frontiers in Handwriting Recognition (ICFHR), 2014 14th International Conference on}
-      \field{title}{Real-time segmentation of on-line handwritten arabic script}
-      \field{year}{2014}
-      \field{pages}{417\bibrangedash 422}
-      \range{pages}{6}
+      \field{isbn}{9783319467238}
+      \field{issn}{1611-3349}
+      \field{journaltitle}{Lecture Notes in Computer Science}
+      \field{title}{3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation}
+      \field{year}{2016}
+      \field{pages}{424\bibrangedash 432}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1007/978-3-319-46723-8_49
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1007/978-3-319-46723-8_49
+      \endverb
     \endentry
   \endsortlist
 \endrefsection

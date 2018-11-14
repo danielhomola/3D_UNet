@@ -14,10 +14,10 @@
 \usepackage{lipsum}
 
 \usepackage[backend=biber,
-style=numeric,
-bibencoding=utf8,
-natbib=true
-]{biblatex}
+	style=numeric,
+	bibencoding=utf8,
+	natbib=true
+	]{biblatex}
 \addbibresource{references.bib} 
 
 
@@ -34,90 +34,76 @@ natbib=true
 
 
 \section{Introduction}
-\lipsum[2]
-\lipsum[3]
+This mini project implements the fully convolutional 3D U-Net segmentation network \cite{_i_ek_2016} and train/evaluate it on the \href{https://goo.gl/fw8qku}{NCI-ISBI 2013 Challenge: Automated Segmentation of Prostate Structures}. This dataset consists of 80 patients' 3D MRI scans from their prostate region. The model was implemented using core TensorFlow (i.e. without Keras) and Python. The main focus of this work was establishing preliminary benchmark performance along with developing a package that enables us to quickly iterate and try various model architectures (through hyperparameter tuning) and evaluation methods. Therefore, the project, in its current form is not intended to be a rigorous and thorough evaluation of the algorithm and it is merely a platform for future work and experimentation.
+
+\section{Data preparation}
+
+The dataset's train and leadership samples were combined to form a training set of 70 samples. The number of scans, their dimensions and various other relevant sample metrics were explored using a jupyter notebook. Several the scans and corresponding segmentation data were examined from several patients using tiled plots and animations. 
+
+Finally, the scans were preprocessed using the following steps:
+
+\begin{itemize}
+	\item All MRI scans were rescaled to be between zero and one.
+	\item Although the 3D U-Net is a fully convolutional network architecture (which is therefore dimension agnostic), the training scans were down-sampled to 128 x 128 size to reduce the required memory during training. The test dataset was not resized to ensure we measure test performance on the original resolution.
+	\item To form batches of the data at training time, the number of scans (i.e. the depth of input tensors) had to be unified across patients. Therefore each patient's data was maximised to be no more than 32 scans. Then, at training time, patients with less scans are padded with zeros.
+	\item An input size of [batch, 32, 128, 128, 1] was also desired as the network has shortcut connections between the analysis and synthesis paths, which necessitate compatible tensor dimensions at equal depths of the architecture. Maximum depth of 32 was chosen, as the network's three dimensional max-pooling and up-convolutional operations both shrink and expand the data by a factor of 2 respectively. Therefore, an input tensor dimension that is the power of two guarantees error free batches without masking.	
+\end{itemize}
 
 
-\section{Headings: first level}
-\label{sec:headings}
+\section{Model architecture}
 
-\lipsum[4] See Section \ref{sec:headings}.
+Several crucial parameters of the model architecture can be easily changed in this implementation by creating a new params.json file. These parameters include:
+depth of the architecture,
+the inital number of filters to use
+whether to use batch normalisation or not
 
-\subsection{Headings: second level}
-\lipsum[5]
-\begin{equation}
-\xi _{ij}(t)=P(x_{t}=i,x_{t+1}=j|y,v,w;\theta)= {\frac {\alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}{\sum _{i=1}^{N} \sum _{j=1}^{N} \alpha _{i}(t)a^{w_t}_{ij}\beta _{j}(t+1)b^{v_{t+1}}_{j}(y_{t+1})}}
-\end{equation}
+Due to the
 
-\subsubsection{Headings: third level}
-\lipsum[6]
+\section{Model performance}
 
-\paragraph{Paragraph}
-\lipsum[7]
+See awesome Table~\ref{tab:table}.
 
-\section{Examples of citations, figures, tables, references}
-\label{sec:others}
-\lipsum[8] \cite{kour2014real,kour2014fast} and see \cite{hadash2018estimate}.
+\begin{table}[t]
+	\centering
+	\begin{tabular}{lcc}
+		\toprule
+		{} & \multicolumn{2}{c}{\textbf{Mean IOU}}  \\
+		\cmidrule(r){2-3}
+		\textbf{Model}     & Original     & 128 x 128 \\
+		\midrule
+		Base with BN    & 0.34  & 0.34  \\
+		Base w/o BN     & 0.34  & 0.34  \\
+		Deeper with BN  & 0.34  & 0.34  \\
+		\bottomrule
+	\end{tabular}
+	\vspace{3mm}
+	\caption{Model performance}
+\end{table}
 
-The documentation for \verb+natbib+ may be found at
-\begin{center}
-  \url{http://mirrors.ctan.org/macros/latex/contrib/natbib/natnotes.pdf}
-\end{center}
-Of note is the command \verb+\citet+, which produces citations
-appropriate for use in inline text.  For example,
-\begin{verbatim}
-   \citet{hasselmo} investigated\dots
-\end{verbatim}
-produces
-\begin{quote}
-  Hasselmo, et al.\ (1995) investigated\dots
-\end{quote}
-
-\begin{center}
-  \url{https://www.ctan.org/pkg/booktabs}
-\end{center}
-
+\pagebreak 
 
 \subsection{Figures}
-\lipsum[10] 
 See Figure \ref{fig:fig1}. Here is how you add footnotes. \footnote{Sample of the first footnote.}
-\lipsum[11] 
 
 \begin{figure}
-  \centering
-  \fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
-  \caption{Sample figure caption.}
-  \label{fig:fig1}
+	\centering
+	\fbox{\rule[-.5cm]{4cm}{4cm} \rule[-.5cm]{4cm}{0cm}}
+	\caption{Sample figure caption.}
+	\label{fig:fig1}
 \end{figure}
+
+
+
+\section{Software engineering decision}
+
+\section{Future work}
+
+
+
+
 
 \subsection{Tables}
 \lipsum[12]
-See awesome Table~\ref{tab:table}.
-
-\begin{table}
- \caption{Sample table title}
-  \centering
-  \begin{tabular}{lll}
-    \toprule
-    \multicolumn{2}{c}{Part}                   \\
-    \cmidrule(r){1-2}
-    Name     & Description     & Size ($\mu$m) \\
-    \midrule
-    Dendrite & Input terminal  & $\sim$100     \\
-    Axon     & Output terminal & $\sim$10      \\
-    Soma     & Cell body       & up to $10^6$  \\
-    \bottomrule
-  \end{tabular}
-  \label{tab:table}
-\end{table}
-
-\subsection{Lists}
-\begin{itemize}
-\item Lorem ipsum dolor sit amet
-\item consectetur adipiscing elit. 
-\item Aliquam dignissim blandit est, in dictum tortor gravida eget. In ac rutrum magna.
-\end{itemize}
-
 
 
 \printbibliography
