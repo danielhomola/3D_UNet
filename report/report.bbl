@@ -1,0 +1,103 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.6 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist[entry]{nty/global}
+    \entry{_i_ek_2016}{article}{}
+      \name{author}{5}{}{%
+        {{hash=ae0f9ca853ff30a5586bdeb9d8f184ee}{%
+           family={Cicek},
+           family_i={C\bibinitperiod},
+           given={Ozgun},
+           given_i={O\bibinitperiod}}}%
+        {{hash=dd1cd1962dcb1b6e7ba1d5e3269c1a70}{%
+           family={Abdulkadir},
+           family_i={A\bibinitperiod},
+           given={Ahmed},
+           given_i={A\bibinitperiod}}}%
+        {{hash=3052262f1bb6043dae930c7a2a4ee624}{%
+           family={Lienkamp},
+           family_i={L\bibinitperiod},
+           given={Soeren\bibnamedelima S.},
+           given_i={S\bibinitperiod\bibinitdelim S\bibinitperiod}}}%
+        {{hash=b452a32296958371572717940f900884}{%
+           family={Brox},
+           family_i={B\bibinitperiod},
+           given={Thomas},
+           given_i={T\bibinitperiod}}}%
+        {{hash=8e46da9de9e53ea5d37089897d69cdd9}{%
+           family={Ronneberger},
+           family_i={R\bibinitperiod},
+           given={Olaf},
+           given_i={O\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {Springer International Publishing}%
+      }
+      \strng{namehash}{52869a220065e15ef38e4e8987c6bf63}
+      \strng{fullhash}{f1d8add19395312699ec84aca560c1a5}
+      \field{sortinit}{C}
+      \field{sortinithash}{59f25d509f3381b07695554a9f35ecb2}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{9783319467238}
+      \field{issn}{1611-3349}
+      \field{journaltitle}{Lecture Notes in Computer Science}
+      \field{title}{3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation}
+      \field{year}{2016}
+      \field{pages}{424\bibrangedash 432}
+      \range{pages}{9}
+      \verb{doi}
+      \verb 10.1007/978-3-319-46723-8_49
+      \endverb
+      \verb{url}
+      \verb http://dx.doi.org/10.1007/978-3-319-46723-8_49
+      \endverb
+    \endentry
+    \entry{ioffe2015batch}{misc}{}
+      \name{author}{2}{}{%
+        {{hash=5543e82359e26b035efc009cb3efff9d}{%
+           family={Ioffe},
+           family_i={I\bibinitperiod},
+           given={Sergey},
+           given_i={S\bibinitperiod}}}%
+        {{hash=ed568d9c3bb059e6bf22899fbf170f86}{%
+           family={Szegedy},
+           family_i={S\bibinitperiod},
+           given={Christian},
+           given_i={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
+      \strng{fullhash}{7e8dee717d54c2984b1c6bd3f3c0561f}
+      \field{sortinit}{I}
+      \field{sortinithash}{25e99d37ba90f7c4fb20baf4e310faf3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift}
+      \field{year}{2015}
+      \verb{eprint}
+      \verb 1502.03167
+      \endverb
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+
