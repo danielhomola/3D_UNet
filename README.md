@@ -4,7 +4,7 @@
 
 __Main deliverables:__
 
-- [Report](reports/report.pdf)
+- [Report](report/report.pdf)
 - [Data exploration notebook](notebooks/data_exploration.ipynb)
 - [Model exploration notebook](notebooks/model_exploration.ipynb)
 
