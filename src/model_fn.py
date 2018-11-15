@@ -40,7 +40,7 @@ def model_fn(features, labels, mode, params):
     # -------------------------------------------------------------------------
 
     training = mode == tf.estimator.ModeKeys.TRAIN
-    logits = unet_3d_network(inputs=features, params=params, training=training)
+    logits = unet_3d_network(inputs=features['x'], params=params, training=training)
 
     # -------------------------------------------------------------------------
     # predictions - for PREDICT and EVAL modes
@@ -50,6 +50,7 @@ def model_fn(features, labels, mode, params):
     if mode == tf.estimator.ModeKeys.PREDICT:
         predictions = {
             'classes': prediction,
+            'truth': tf.argmax(features['y'], -1),
             'probabilities': tf.nn.softmax(logits, axis=-1)
         }
         return tf.estimator.EstimatorSpec(mode, predictions=predictions)
@@ -61,7 +62,7 @@ def model_fn(features, labels, mode, params):
     # weighted softmax, see https://stackoverflow.com/a/44563055
     class_weights = tf.cast(tf.constant(params['class_weights']), tf.float32)
     class_weights = tf.reduce_sum(
-        tf.cast(features, tf.float32) * class_weights, axis=-1
+        tf.cast(features['x'], tf.float32) * class_weights, axis=-1
     )
     loss = tf.losses.softmax_cross_entropy(
         logits=logits,
@@ -94,9 +95,9 @@ def model_fn(features, labels, mode, params):
 
     assert mode == tf.estimator.ModeKeys.TRAIN
 
-    
     optimizer = tf.train.AdamOptimizer(learning_rate=params['learning_rate'])
     global_step = tf.train.get_or_create_global_step()
+
     if params['batch_norm']:
         # as per TF batch_norm docs and also following https://goo.gl/1UVeYK
         update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)

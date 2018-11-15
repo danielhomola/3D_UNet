@@ -18,7 +18,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 from IPython.display import display, clear_output
 
-log = logging.getLogger('tensorflow')
+logger = logging.getLogger('tensorflow')
 
 
 class Dataset(object):
@@ -73,7 +73,7 @@ class Dataset(object):
             else:
                 patients[scan.PatientID].add_scan(scan=scan)
 
-            log.info('Reading in and parsing scan %d/%d' % (i, len(scans)))
+            logger.info('Reading in and parsing scan %d/%d' % (i, len(scans)))
         
         # sort scans within each patient
         for patient in patients.values():
@@ -81,7 +81,8 @@ class Dataset(object):
         
         return patients
 
-    def preprocess_dataset(self, width=128, height=128, max_scans=32):
+    def preprocess_dataset(self, resize=True, width=128, height=128,
+                           max_scans=32):
         """
         Scales each scan in the dataset to be between zero and one, then
         resizes all scans and targets to have the same width and height.
@@ -98,17 +99,18 @@ class Dataset(object):
         shortcut connections can be made between them.
 
         Args:
+            resize (bool): Whether to resize or not the scans.
             width (int): Width to resize all scans and targets in dataset.
             height (int): Height to resize all scans and targets in dataset.
             max_scans (tuple <int>): Maximum number of scans to keep.
         """
         for i, patient in enumerate(self.patients.values()):
             patient.normalise_scans()
-            patient.resize_and_reshape(width=width, height=height)
+            patient.resize_reshape(resize=resize, width=width, height=height)
             patient.adjust_depth(max_scans=max_scans)
             patient.preprocessed = True
 
-            log.info('Preprocessing data of patient %d/%d' % (
+            logger.info('Preprocessing data of patient %d/%d' % (
                 i, len(self.patients.values())))
 
     def save_dataset(self, path):
@@ -133,11 +135,15 @@ class Dataset(object):
         """
         return pickle.load(open(path, 'rb'))
 
-    def create_tf_dataset(self, num_classes=3):
+    def create_tf_dataset(self, resized=True, num_classes=3):
         """
         Creates a TensorFlow DataSet from the DataSet. Note, this has to
         be run after all the MRI scans have been rescaled to the same size.
         They can have different depths, i.e. number of scans however.
+
+        Args:
+            resized (bool): Whether dealing with a uniformly resized scans.
+            num_classes (int): Number of classes in segmentation files.
 
         Returns:
             :class:`tf.data.Dataset`: TensorFlow dataset.
@@ -145,13 +151,22 @@ class Dataset(object):
 
         # extract all scans and segmentation images from every patient
         scans_segs = [(p.scans, p.seg) for p in self.patients.values()]
-        _, width, height = scans_segs[0][0].shape
+        if resized:
+            _, width, height = scans_segs[0][0].shape
+            x_shape = [None, width, height, 1]
+            y_shape = [None, width, height, num_classes]
+        else:
+            x_shape = [None, None, None, 1]
+            y_shape = [None, None, None, num_classes]
 
         def gen_scans_segs():
             """
             Generator function for dataset creation.
             """
             for s in scans_segs:
+                # if each image is different sized, we need to get w, h here
+                _, width, height = s[0].shape
+
                 # add channel dimension to scans
                 x = s[0].reshape((-1, width, height, 1))
                 yield (x, s[1])
@@ -159,9 +174,7 @@ class Dataset(object):
         return tf.data.Dataset.from_generator(
             generator=gen_scans_segs,
             output_types=(tf.float32, tf.int32),
-            output_shapes=(
-                [None, width, height, 1], [None, width, height, num_classes]
-            )
+            output_shapes=(x_shape, y_shape)
         )
 
 
@@ -225,23 +238,25 @@ class Patient(object):
                 scans[i] = scan * 0
         self.scans = scans
 
-    def resize_and_reshape(self, width, height):
+    def resize_reshape(self, resize, width, height):
         """
         Resizes each scan and target segmentation image of a patient to a
         given width and height. It also turns the target into a one-hot
         encoded tensor of shape: [depth, width, height, num_classes].
 
         Args:
+            resize (bool): Whether to resize or not the scans.
             width (int): Width to resize all scans and targets in dataset.
             height (int): Height to resize all scans and targets in dataset.
         """
         # resize scans
-        depth = self.scans.shape[0]
-        scans = skimage.transform.resize(
-            image=self.scans,
-            output_shape=(depth, width, height)
-        )
-        self.scans = scans
+        if resize:
+            depth = self.scans.shape[0]
+            scans = skimage.transform.resize(
+                image=self.scans,
+                output_shape=(depth, width, height)
+            )
+            self.scans = scans
 
         # turns target into one-hot tensor, adopted from:
         # https://stackoverflow.com/a/36960495
@@ -249,12 +264,13 @@ class Patient(object):
         seg = (np.arange(n_classes) == self.seg[..., None]).astype(bool)
 
         # resize targets while preserving their boolean nature
-        seg = skimage.img_as_bool(
-            skimage.transform.resize(
-                image=seg,
-                output_shape=(depth, width, height, n_classes)
+        if resize:
+            seg = skimage.img_as_bool(
+                skimage.transform.resize(
+                    image=seg,
+                    output_shape=(depth, width, height, n_classes)
+                )
             )
-        )
         self.seg = seg.astype(int)
 
     def adjust_depth(self, max_scans):

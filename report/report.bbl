@@ -70,6 +70,33 @@
       \verb http://dx.doi.org/10.1007/978-3-319-46723-8_49
       \endverb
     \endentry
+    \entry{ioffe2015batch}{misc}{}
+      \name{author}{2}{}{%
+        {{hash=5543e82359e26b035efc009cb3efff9d}{%
+           family={Ioffe},
+           family_i={I\bibinitperiod},
+           given={Sergey},
+           given_i={S\bibinitperiod}}}%
+        {{hash=ed568d9c3bb059e6bf22899fbf170f86}{%
+           family={Szegedy},
+           family_i={S\bibinitperiod},
+           given={Christian},
+           given_i={C\bibinitperiod}}}%
+      }
+      \strng{namehash}{7e8dee717d54c2984b1c6bd3f3c0561f}
+      \strng{fullhash}{7e8dee717d54c2984b1c6bd3f3c0561f}
+      \field{sortinit}{I}
+      \field{sortinithash}{25e99d37ba90f7c4fb20baf4e310faf3}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{eprintclass}{cs.LG}
+      \field{eprinttype}{arXiv}
+      \field{title}{Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift}
+      \field{year}{2015}
+      \verb{eprint}
+      \verb 1502.03167
+      \endverb
+    \endentry
   \endsortlist
 \endrefsection
 \endinput

@@ -45,18 +45,26 @@ def input_fn(training, params):
         ).repeat().padded_batch(
             batch_size=params['batch_size'],
             padded_shapes=(
-            [max_s, w, h, 1], [max_s, w, h, params['num_classes']])
+                [max_s, w, h, 1], [max_s, w, h, params['num_classes']]
+            )
         )
 
     # for testing we use the unscaled images with their original dims,
     # we still pad the depth dimension to max_s though
     else:
+        # predicting a resized dataset, i.e. all have same width height?
+        resized = 'resized' in params['test_dataset_path']
         dataset = Dataset.load_dataset(
             os.path.join(package_root, params['test_dataset_path'])
-        ).create_tf_dataset().padded_batch(
+        ).create_tf_dataset(
+            resized=resized
+        ).padded_batch(
+            # we have different sized test scans so we need batch 1
             batch_size=1,
             padded_shapes=(
-            [max_s, None, None, 1], [max_s, None, None, params['num_classes']])
+                [max_s, None, None, 1],
+                [max_s, None, None, params['num_classes']]
+            )
         )
 
     iterator = tf.data.Iterator.from_structure(
@@ -66,4 +74,8 @@ def input_fn(training, params):
     dataset_init_op = iterator.make_initializer(dataset)
     tf.add_to_collection(tf.GraphKeys.TABLE_INITIALIZERS, dataset_init_op)
     next_element = iterator.get_next()
-    return next_element[0], next_element[1]
+
+    # extremely hack way of getting tf.estimator to return labels at pred time
+    # see https://github.com/tensorflow/tensorflow/issues/17824
+    features = {'x': next_element[0], 'y': next_element[1]}
+    return features, next_element[1]

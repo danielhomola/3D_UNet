@@ -4,11 +4,11 @@
 
 __Main deliverables:__
 
-- [Project summary](reports/report.pdf)
+- [Report](reports/report.pdf)
 - [Data exploration notebook](notebooks/data_exploration.ipynb)
 - [Model exploration notebook](notebooks/model_exploration.ipynb)
 
-<img src="reports/figures/output.gif" width=1024 />
+### Overview
 
 MRI scans from 70 patients were used to learn to automatically segment
 the 3D volume of scans, and therefore spatially identify the outlines of
@@ -18,15 +18,15 @@ The aim of this project was to quickly establish a benchmark model,
 with minimal / lightweight code, only relying on core TensorFlow and
 Python, i.e. without using Keras or other wrapper libraries.
 
-Dataset used
+__Dataset used__
 - [NCI-ISBI 2013 Challenge: Automated Segmentation of Prostate Structures](https://wiki.cancerimagingarchive.net/display/DOI/NCI-ISBI+2013+Challenge%3A+Automated+Segmentation+of+Prostate+Structures)
 
-Original Paper
+__Original Paper__
 - [3D U-Net: Learning Dense Volumetric Segmentation from Sparse Annotation](https://arxiv.org/abs/1606.06650)
 
-## Summary
+### Data
 
-__Prostate MRI segmentation using 3D U-Net in TensorFlow.__
+__Prostate MRI scans with segmentation__
 
 Objective: assign mutually exclusive class labels to each pixel/voxel.
 
@@ -40,28 +40,21 @@ Class labels: 0: background, 1: central gland , 2: peripheral zone
         <th>Example</th>
     </tr>
     <tr>
-        <td>X: 4-D Tensor</td>
-        <td>(?, 128, 128, 1)</td>
+        <td>X: 5-D Tensor</td>
+        <td>(?, ?, 128, 128, 1)</td>
         <td>Resized (128, 128) MRI scans with depth (between 15 and 40)
-        and a single channel.</td>
-        <td><img src="assets/example_input.jpg" width=320 /></td>
+        and a single channel. Variable batch size.</td>
+        <td><img src="report/figures/data_x.png" width=320 height=320 /></td>
     </tr>
     <tr>
-        <td>y: 4-D Tensor</td>
-        <td>(?, 128, 128, 3)</td>
+        <td>y: 5-D Tensor</td>
+        <td>(?, ?, 128, 128, 3)</td>
         <td>Resized (128, 128) segmentation images with depth
         corresponding to X and a three classes, i.e. 3 channels one-hot
-         encoded.</td>
-        <td><img src="assets/example_output.jpg" width=320 /></td>
+         encoded. Variable batch size.</td>
+        <td><img src="report/figures/data_y.png" width=320 height=320 /></td>
     </tr>
 </table>
-
-### Examples on Test Data
-<img src="reports/figures/result1.png" />
-<img src="reports/figures/result2.png" />
-<img src="reports/figures/result3.png" />
-<img src="reports/figures/result4.png" />
-
 
 ## Get Started
 
@@ -105,6 +98,8 @@ test datasets.
 ```bash
 jupyter notebook "notebooks/data_exploration.ipynb"
 ```
+
+## Build model
 
 ### Train and evaluate
 
@@ -164,8 +159,28 @@ python src/main.py -model_dir models/base_model -mode predict - pred_ix 0 1 2 3 
 
 ```
 
-- Open the Jupyter notebook file to run against test data
+### Explore predictions
+
+- Open the Jupyter notebook to have a look at test cases
 
 ```bash
 jupyter notebook "notebooks/model_exploration.ipynb"
 ```
+
+#### Example predictions with the `base model`
+
+<img src="report/figures/base_model1.png" width=1024 />
+
+Ground truth is on left, prediction is on the right in each scan.
+
+<img src="report/figures/base_model2.png" width=1024 />
+
+#### Example predictions with the `deeper model`
+
+<img src="report/figures/deeper_model1.png" width=1024 />
+
+Ground truth is on left, prediction is on the right in each scan.
+
+<img src="report/figures/deeper_model2.png" width=1024 />
+
+

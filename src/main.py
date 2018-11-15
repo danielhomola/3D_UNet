@@ -2,8 +2,7 @@
 Train 3D U-Net network, for prostate MRI scans.
 
 Ideas taken from:
-https://github.com/cs230-stanford/cs230-code-examples/tree/master/
-tensorflow/vision
+https://github.com/cs230-stanford/cs230-code-examples/tree/master/tensorflow/vision
 
 and
 
@@ -26,7 +25,6 @@ from src.model_fn import model_fn
 from src.input_fn import input_fn
 from src.utils import Params, set_logger
 
-# setup command line args
 
 def arg_parser(args):
     """
@@ -58,7 +56,7 @@ def arg_parser(args):
     
     # parse input params from cmd line
     try:
-        return  parser.parse_args(args)
+        return parser.parse_args(args)
     except:
         parser.print_help()
         sys.exit(0)
@@ -72,7 +70,10 @@ def main(argv):
     # -------------------------------------------------------------------------
     # setup
     # -------------------------------------------------------------------------
-    
+
+    # set the random seed for the whole graph for reproductible experiments
+    tf.set_random_seed(42)
+
     # load the parameters from model's json file as a dict
     args = arg_parser(argv)
     json_path = os.path.join(args.model_dir, 'params.json')
@@ -123,13 +124,13 @@ def main(argv):
     
     if args.mode == 'predict':
         predictions = model.predict(input_fn=lambda: input_fn(False, params))
-        
+
         # extract predictions, only save predicted classes not probs
         to_save = dict()
         for i, y_pred in enumerate(predictions):
             if i in args.pred_ix:
                 logger.info('Predicting patient: %d.' % i)
-                to_save[i] = y_pred['classes']
+                to_save[i] = y_pred
         
         # save them with pickle to model dir
         pred_file = os.path.join(args.model_dir, 'preds.npy')
