@@ -1,0 +1,17 @@
+{
+    "batch_size": 2,
+    "max_train_steps": 7000,
+    "display_steps": 70,
+    "learning_rate": 1e-3,
+    "train_dataset_path": "data/processed/train_dataset_resized.pckl",
+    "test_dataset_path": "data/processed/test_dataset.pckl",
+
+    "train_img_size": 128,
+    "max_scans": 32,
+    "num_classes": 3,
+    "class_weights": [0.00438692, 0.67369458, 0.3219185],
+
+    "depth": 6,
+    "n_base_filters": 8,
+    "batch_norm": true
+}
