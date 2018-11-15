@@ -42,16 +42,16 @@ Class labels: 0: background, 1: central gland , 2: peripheral zone
     <tr>
         <td>X: 5-D Tensor</td>
         <td>(?, ?, 128, 128, 1)</td>
-        <td>Resized (128, 128) MRI scans with depth (between 15 and 40)
-        and a single channel. Variable batch size.</td>
+        <td>Resized (128, 128) MRI scans<br> with depth (between 15 and 40) <br>
+        and a single channel. <br>Variable batch size.</td>
         <td><img src="report/figures/data_x.png" width=320 height=320 /></td>
     </tr>
     <tr>
         <td>y: 5-D Tensor</td>
         <td>(?, ?, 128, 128, 3)</td>
-        <td>Resized (128, 128) segmentation images with depth
-        corresponding to X and a three classes, i.e. 3 channels one-hot
-         encoded. Variable batch size.</td>
+        <td>Resized (128, 128) segmentation<br> images with depth
+        corresponding <br>to X and a three classes, i.e. 3 <br>channels one-hot
+         encoded. <br>Variable batch size.</td>
         <td><img src="report/figures/data_y.png" width=320 height=320 /></td>
     </tr>
 </table>
