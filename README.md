@@ -171,7 +171,7 @@ jupyter notebook "notebooks/model_exploration.ipynb"
 
 <img src="report/figures/base_model1.png" width=1024 />
 
-Ground truth is on left, prediction is on the right in each scan.
+Ground truth is on left, prediction is on the right in each image.
 
 <img src="report/figures/base_model2.png" width=1024 />
 
@@ -179,7 +179,7 @@ Ground truth is on left, prediction is on the right in each scan.
 
 <img src="report/figures/deeper_model1.png" width=1024 />
 
-Ground truth is on left, prediction is on the right in each scan.
+Ground truth is on left, prediction is on the right in each image.
 
 <img src="report/figures/deeper_model2.png" width=1024 />
 
